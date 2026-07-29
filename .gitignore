@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*.inspect.ndjson
+.DS_Store
+.venv/
+venv/
+build/
+dist/
+vendor/
+work/
+outputs/
+*.spec
+source/*.pdf
+*.exe
+*.zip
+
+# 生成产物默认不进入版本库；如需发布请使用 GitHub Releases。
+output/*.xlsx
+output/*.pdf
+output/*.docx
