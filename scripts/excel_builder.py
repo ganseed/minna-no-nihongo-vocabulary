@@ -13,8 +13,18 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 
 
-# 打包为 EXE 后，以 EXE 所在目录为工程根目录，确保 JSON 始终可外部编辑。
-PROJECT_ROOT = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[1]
+def project_root() -> Path:
+    """定位应用旁边的外部 data 目录。"""
+    if not getattr(sys, "frozen", False):
+        return Path(__file__).resolve().parents[1]
+    executable = Path(sys.executable).resolve()
+    # macOS 应用位于发布目录/App.app/Contents/MacOS/，数据放在 App.app 旁边。
+    if sys.platform == "darwin" and executable.parent.name == "MacOS":
+        return executable.parents[3]
+    return executable.parent
+
+
+PROJECT_ROOT = project_root()
 DATA_FILE = PROJECT_ROOT / "data" / "vocabulary.json"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 

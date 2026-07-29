@@ -1,4 +1,4 @@
-# 大家的日语 每课单词
+# 大家的日语长期词库工程
 
 本项目以 `data/vocabulary.json` 为唯一数据源，可以生成：
 
@@ -145,3 +145,60 @@ data/vocabulary.json
 - `example`：例句，不进入默认默写题库
 
 修改时不要破坏 JSON 的引号、逗号和方括号。追加 Lesson26、Lesson27 等记录后，重新生成即可，不需要重做模板。
+
+## 七、是否需要编译 EXE 或 Mac App
+
+不需要。GitHub 源码安装 Python 和依赖后即可直接运行。
+
+只有希望普通用户无需安装 Python、直接双击运行时，才需要另外发布：
+
+- Windows `.exe`
+- macOS `.app` 或原生可执行程序
+
+这类编译文件建议放在 GitHub Releases，不要提交到源码仓库。
+
+### 编译桌面应用
+
+本项目提供同一套图形界面应用源码。应用不会把词库封装在程序内部，而是读取应用旁边的 `data/vocabulary.json`，因此修改 JSON 后不需要重新编译。
+
+Windows 本机编译：
+
+```powershell
+./build_windows_app.ps1
+```
+
+输出位于 `dist/windows/`。
+
+macOS 本机编译：
+
+```bash
+chmod +x build_macos_app.sh
+./build_macos_app.sh
+```
+
+输出位于 `dist/macos/`。
+
+也可以在 GitHub 仓库的 `Actions` 页面运行 `Build desktop apps`。工作流会分别使用 Windows 和 macOS 构建机生成两个安装包，在该次运行的 `Artifacts` 中下载：
+
+- `windows-app`
+- `macos-app`
+
+发布包中应保持如下结构：
+
+```text
+应用程序或 App.app
+data/vocabulary.json
+output/
+```
+
+## 八、Git 更新流程
+
+修改 JSON 或代码并验证生成正常后：
+
+```bash
+git add .
+git commit -m "更新词库内容"
+git push
+```
+
+教材 PDF、EXE、ZIP、OCR 临时文件和生成产物已通过 `.gitignore` 排除。公开发布前请自行确认词库数据与教材内容的版权许可。

@@ -1,0 +1,12 @@
+大家的日语词库生成器
+
+1. 修改 data/vocabulary.json。
+2. 关闭已经打开的词库或默写 Excel。
+3. Windows 双击“大家的日语词库生成器.exe”。
+4. macOS 双击“大家的日语词库生成器.app”。
+5. 点击“重新生成 Excel”，结果位于 output 文件夹。
+
+data、output 和应用程序必须保持在同一个发布目录中。
+修改 JSON 不需要重新编译应用。
+
+macOS 首次打开未签名应用时，可按住 Control 点击 App，选择“打开”。
