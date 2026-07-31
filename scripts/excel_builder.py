@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import random
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
+import xlsxwriter
 from openpyxl import Workbook
 from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -27,6 +30,7 @@ def project_root() -> Path:
 PROJECT_ROOT = project_root()
 DATA_FILE = PROJECT_ROOT / "data" / "vocabulary.json"
 OUTPUT_DIR = PROJECT_ROOT / "output"
+MACRO_TEMPLATE = PROJECT_ROOT / "template" / "默写宏模板.xlsm"
 
 THIN = Side(style="thin", color="B8C4CE")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
@@ -202,18 +206,104 @@ def build_exam(records: list[dict], output_dir: Path | None = None) -> Path:
     return path
 
 
+def build_macro_exam(records: list[dict], output_dir: Path | None = None) -> Path:
+    """使用内置 VBA 创建跨平台可生成的宏版默写工作簿。"""
+    if not MACRO_TEMPLATE.is_file():
+        raise FileNotFoundError(f"缺少宏模板：{MACRO_TEMPLATE}")
+
+    destination = Path(output_dir) if output_dir else OUTPUT_DIR
+    destination.mkdir(parents=True, exist_ok=True)
+    path = destination / "大家的日语Ⅰ默写-宏版.xlsm"
+    eligible = [record for record in records if record.get("chinese")]
+    random.shuffle(eligible)
+
+    with zipfile.ZipFile(MACRO_TEMPLATE) as archive:
+        vba_project = archive.read("xl/vbaProject.bin")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        vba_path = Path(temp_dir) / "vbaProject.bin"
+        vba_path.write_bytes(vba_project)
+        workbook = xlsxwriter.Workbook(path)
+        workbook.add_vba_project(vba_path)
+        header = workbook.add_format({
+            "font_name": "Yu Gothic", "font_size": 11, "bold": True,
+            "font_color": "#FFFFFF", "bg_color": "#375A7F",
+            "border": 1, "align": "center", "valign": "vcenter",
+        })
+        body = workbook.add_format({
+            "font_name": "Yu Gothic", "font_size": 11, "font_color": "#172B3A",
+            "border": 1, "align": "center", "valign": "vcenter", "text_wrap": True,
+        })
+
+        settings = workbook.add_worksheet("设置")
+        settings.hide_gridlines(2)
+        settings.set_column("A:A", 24)
+        settings.set_column("B:B", 48)
+        settings_rows = [
+            ["默写设置", "选择值"], ["方向", "中译日"], ["课程", "全部"], ["随机数量", 20],
+            ["使用方式", "设置完成后点击右侧“随机生成”"],
+            ["随机规则", "每次点击都会重新打乱"],
+            ["可选方向", "日译中 / 中译日"],
+            ["课程填写示例", "单课：3；多课：1,3,5；全部：全部"],
+            ["可选数量", "20 / 50 / 100 / 200 / 全部"],
+            ["题目范围", "所选课程的全部记录"],
+        ]
+        for row, values in enumerate(settings_rows):
+            settings.write_row(row, 0, values, header if row == 0 else body)
+        settings.data_validation("B2", {"validate": "list", "source": ["日译中", "中译日"]})
+        settings.data_validation("B4", {"validate": "list", "source": [20, 50, 100, 200, "全部"]})
+        settings.insert_button("D2", {
+            "macro": "RegenerateExam", "caption": "随机生成",
+            "width": 150, "height": 42,
+        })
+
+        source = workbook.add_worksheet("题库")
+        source.hide_gridlines(2)
+        source.freeze_panes(1, 0)
+        source.set_column("A:A", 10)
+        source.set_column("B:C", 36)
+        source.set_column("D:E", 16)
+        source.write_row(0, 0, ["lesson", "japanese", "chinese", "type", "id"], header)
+        for row, record in enumerate(eligible, 1):
+            source.write_row(row, 0, [
+                record["lesson"], record["japanese"], record["chinese"],
+                record["type"], record["id"],
+            ], body)
+
+        exam = workbook.add_worksheet("默写")
+        exam.hide_gridlines(2)
+        exam.freeze_panes(1, 0)
+        exam.set_column("A:A", 9)
+        exam.set_column("B:B", 40)
+        exam.set_column("C:C", 30)
+        exam.set_column("D:D", 34)
+        exam.write_row(0, 0, ["序号", "题目", "作答", "答案"], header)
+        # 预先为全部可用题目行设置统一边框，宏写入更多题目后样式仍然完整。
+        for row in range(1, len(eligible) + 1):
+            exam.set_row(row, 36)
+            exam.write_blank(row, 0, None, body)
+            exam.write_blank(row, 1, None, body)
+            exam.write_blank(row, 2, None, body)
+            exam.write_blank(row, 3, None, body)
+        for row, record in enumerate(eligible[:20], 1):
+            exam.write_row(row, 0, [row, record["chinese"], "", record["japanese"]], body)
+        workbook.close()
+    return path
+
+
 def build_workbooks(
     data_path: Path | None = None,
     output_dir: Path | None = None,
-) -> tuple[Path, Path]:
-    """从 JSON 重新生成两个 Excel 文件。"""
+) -> tuple[Path, Path, Path]:
+    """从 JSON 生成词库、普通默写和宏版默写三个 Excel 文件。"""
     destination = Path(output_dir) if output_dir else OUTPUT_DIR
     destination.mkdir(parents=True, exist_ok=True)
     records = load_records(data_path)
     vocabulary_path = build_vocabulary(records, destination)
     exam_path = build_exam(records, destination)
+    macro_exam_path = build_macro_exam(records, destination)
     print(f"已生成 {len(records)} 条记录，输出目录：{destination}")
-    return vocabulary_path, exam_path
+    return vocabulary_path, exam_path, macro_exam_path
 
 
 if __name__ == "__main__":

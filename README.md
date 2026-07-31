@@ -66,8 +66,8 @@ cd minna-no-nihongo-vocabulary
 
 Windows 和 macOS 发布包使用相同界面，提供：
 
-- “选择 JSON 文件”：默认指向发布包内的 `data/vocabulary.json`，也可以使用其他兼容词库
-- “生成 Excel 词库 + 默写模板”：同时生成阅读词库和普通默写工作簿
+- “选择 JSON 文件”：软件启动时不预选文件，可选择发布包内的 `data/vocabulary.json` 或其他兼容词库
+- “生成 Excel 词库 + 默写模板（含宏版）”：一次生成阅读词库、普通默写和宏版默写
 - “生成 Word 词库”：单独生成可编辑 Word 文档
 - “打开输出文件夹”：查看生成结果
 
@@ -78,8 +78,9 @@ Windows 和 macOS 发布包使用相同界面，提供：
 ├── 大家的日语词库工具.exe 或 大家的日语词库工具.app
 ├── data/
 │   └── vocabulary.json
+├── template/
+│   └── 默写宏模板.xlsm
 ├── output/
-└── README.md
 ```
 
 应用、`data` 和 `output` 应保持在同一个发布目录中。macOS 包已经自带默认 `data/vocabulary.json`，不需要手动复制。
@@ -113,8 +114,9 @@ python main.py word --data "D:/词库/其他词库.json" --output "D:/词库/生
 
 - `大家的日语Ⅰ词库.xlsx`
 - `大家的日语Ⅰ默写.xlsx`
+- `大家的日语Ⅰ默写-宏版.xlsm`
 
-普通 `.xlsx` 不含宏。需要新的随机顺序时，可以再次执行 `excel` 命令；如果使用宏版，直接点击工作簿内的“随机生成”即可。
+普通 `.xlsx` 不含宏。宏版会使用当前选择的 JSON 同步生成，打开后可直接点击“随机生成”。
 
 ## 导出 Word
 
@@ -166,20 +168,7 @@ data/vocabulary.json
 
 修改 JSON 后不需要重新编译 Python 程序或桌面应用，但需要重新生成普通 Excel 和 Word。
 
-注意：现有宏版 `.xlsm` 内部保存了一份题库，修改 JSON 后不会自动同步。应先重新生成普通默写 `.xlsx`，再更新宏版后发布。
-
-## 重新制作宏版（Windows）
-
-先生成普通 Excel，然后运行：
-
-```powershell
-python main.py excel
-./scripts/add_excel_macro.ps1 `
-  -SourcePath "./output/大家的日语Ⅰ默写.xlsx" `
-  -OutputPath "./output/大家的日语Ⅰ默写-宏版.xlsm"
-```
-
-该步骤需要本机安装 Microsoft Excel，并允许程序访问 VBA 工程。macOS 可以正常使用已经生成的宏版，但当前宏版制作脚本需要在 Windows 上运行。
+修改 JSON 后再次点击“生成 Excel 词库 + 默写模板（含宏版）”，三个 Excel 文件都会同步使用新数据。Windows 和 macOS 均可生成宏版，生成过程不要求本机安装 Microsoft Excel。
 
 ## 构建桌面应用
 
@@ -203,7 +192,7 @@ chmod +x build_macos_app.sh
 - Windows：`dist/windows/大家的日语词库-Windows/`
 - macOS：`dist/macos/大家的日语词库-macOS/`
 
-两个目录都会自动包含 `data/vocabulary.json`、空的 `output/` 和 README。应用不会把词库永久封装进程序，修改 JSON 不需要重新编译；也可以直接在界面中选择其他 JSON。
+两个目录都会自动包含 `data/vocabulary.json`、宏模板和空的 `output/`，不再复制 README。应用不会把词库永久封装进程序，修改 JSON 不需要重新编译；也可以直接在界面中选择其他 JSON。
 
 GitHub Actions 已拆分为两个独立工作流：
 
@@ -222,9 +211,9 @@ minna-no-nihongo-vocabulary/
 ├── data/
 │   └── vocabulary.json
 ├── output/
-│   └── 大家的日语Ⅰ默写-宏版.xlsm
+├── template/
+│   └── 默写宏模板.xlsm
 ├── scripts/
-│   ├── add_excel_macro.ps1
 │   ├── excel_builder.py
 │   ├── export_word.py
 │   └── random_exam.py

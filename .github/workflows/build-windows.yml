@@ -35,6 +35,7 @@ jobs:
           $package = "dist/windows/大家的日语词库-Windows"
           if (-not (Test-Path "$package/大家的日语词库工具.exe")) { throw "Windows executable is missing" }
           if (-not (Test-Path "$package/data/vocabulary.json")) { throw "Bundled vocabulary.json is missing" }
+          if (-not (Test-Path "$package/template/默写宏模板.xlsm")) { throw "Macro template is missing" }
           if (-not (Test-Path "$package/output")) { throw "Output directory is missing" }
 
       - name: Create Windows zip

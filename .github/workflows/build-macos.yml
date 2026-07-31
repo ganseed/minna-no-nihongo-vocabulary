@@ -35,6 +35,7 @@ jobs:
           package="dist/macos/大家的日语词库-macOS"
           test -d "$package/大家的日语词库工具.app"
           test -f "$package/data/vocabulary.json"
+          test -f "$package/template/默写宏模板.xlsm"
           test -d "$package/output"
 
       - name: Create macOS zip

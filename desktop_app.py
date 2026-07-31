@@ -35,10 +35,10 @@ class VocabularyApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("大家的日语词库工具")
-        self.geometry("680x420")
-        self.minsize(620, 390)
-        self.data_path = tk.StringVar(value=str(default_data_file()))
-        self.status = tk.StringVar(value="请选择词库 JSON，然后选择需要生成的文件。")
+        self.geometry("700x480")
+        self.minsize(650, 450)
+        self.data_path = tk.StringVar(value="")
+        self.status = tk.StringVar(value="请先选择词库 JSON，然后选择需要生成的文件。")
         self.action_buttons: list[ttk.Button] = []
         self._build_ui()
 
@@ -49,7 +49,7 @@ class VocabularyApp(tk.Tk):
         ttk.Label(container, text="大家的日语词库工具", font=("Arial", 21, "bold")).pack()
         ttk.Label(
             container,
-            text="从 JSON 生成可编辑的 Word 词库、Excel 词库和默写模板",
+            text="从 JSON 生成 Word 词库、Excel 词库、普通默写和宏版默写",
             foreground="#52606D",
         ).pack(pady=(6, 24))
 
@@ -60,7 +60,7 @@ class VocabularyApp(tk.Tk):
         ttk.Button(source_frame, text="选择 JSON 文件", command=self.choose_data_file).grid(row=0, column=1)
         ttk.Label(
             source_frame,
-            text="默认使用发布包 data 文件夹中的 vocabulary.json，也可以选择其他兼容词库。",
+            text="请选择发布包 data 文件夹中的 vocabulary.json，或其他兼容词库。",
             foreground="#6B7280",
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(9, 0))
 
@@ -69,7 +69,7 @@ class VocabularyApp(tk.Tk):
         action_frame.columnconfigure((0, 1), weight=1)
         excel_button = ttk.Button(
             action_frame,
-            text="生成 Excel 词库 + 默写模板",
+            text="生成 Excel 词库 + 默写模板（含宏版）",
             command=lambda: self.start_generation("excel"),
         )
         excel_button.grid(row=0, column=0, sticky="ew", padx=(0, 8), ipady=10)
@@ -87,7 +87,7 @@ class VocabularyApp(tk.Tk):
             command=lambda: open_folder(OUTPUT_DIR),
         ).pack()
         ttk.Separator(container).pack(fill="x", pady=20)
-        ttk.Label(container, textvariable=self.status, wraplength=610, justify="center").pack()
+        ttk.Label(container, textvariable=self.status, wraplength=640, justify="center").pack(fill="x", pady=(0, 8))
 
     def choose_data_file(self) -> None:
         """让用户选择其他兼容的 JSON 词库。"""
@@ -108,7 +108,7 @@ class VocabularyApp(tk.Tk):
             return
         for button in self.action_buttons:
             button.configure(state="disabled")
-        label = "Excel 词库和默写模板" if kind == "excel" else "Word 词库"
+        label = "Excel 词库和默写模板（含宏版）" if kind == "excel" else "Word 词库"
         self.status.set(f"正在生成{label}，请稍候……")
         threading.Thread(target=self._generate, args=(kind, source), daemon=True).start()
 
