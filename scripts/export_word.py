@@ -15,7 +15,7 @@ from docx.shared import Cm, Pt
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def export_word(data_path: Path, output_path: Path) -> None:
+def export_word(data_path: Path, output_path: Path) -> Path:
     """生成每课分节、例句置后的可编辑 Word 文档。"""
     records = json.loads(data_path.read_text(encoding="utf-8"))
     grouped: dict[int, list[dict]] = defaultdict(list)
@@ -49,6 +49,7 @@ def export_word(data_path: Path, output_path: Path) -> None:
                 paragraph.add_run(item["japanese"] + "\n" + item["chinese"])
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
+    return output_path
 
 
 if __name__ == "__main__":

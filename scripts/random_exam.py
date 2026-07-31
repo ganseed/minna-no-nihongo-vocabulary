@@ -21,16 +21,15 @@ def select_questions(
     records: Iterable[dict],
     lessons: Iterable[int] | None = None,
     count: int = 20,
-    direction: str = "jp_to_zh",
+    direction: str = "zh_to_jp",
     seed: int | None = None,
 ) -> list[dict]:
-    """按课次和方向随机抽题；例句默认不进入默写题。"""
+    """按课次和方向从全部有中文内容的记录中随机抽题。"""
     lesson_set = set(lessons or [])
     pool = [
         record
         for record in records
-        if record["type"] in {"word", "expression"}
-        and record["chinese"]
+        if record["chinese"]
         and (not lesson_set or record["lesson"] in lesson_set)
     ]
     rng = random.Random(seed)

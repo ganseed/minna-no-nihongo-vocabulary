@@ -1,0 +1,51 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    name: macOS
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build macOS application
+        run: |
+          chmod +x build_macos_app.sh
+          ./build_macos_app.sh
+
+      - name: Verify release contents
+        run: |
+          package="dist/macos/大家的日语词库-macOS"
+          test -d "$package/大家的日语词库工具.app"
+          test -f "$package/data/vocabulary.json"
+          test -d "$package/output"
+
+      - name: Create macOS zip
+        run: |
+          cd dist/macos
+          ditto -c -k --sequesterRsrc --keepParent "大家的日语词库-macOS" "../大家的日语词库-macOS.zip"
+
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: minna-no-nihongo-vocabulary-macos
+          path: dist/大家的日语词库-macOS.zip
+          if-no-files-found: error
+          retention-days: 14

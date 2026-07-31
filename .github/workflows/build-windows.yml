@@ -1,0 +1,50 @@
+name: Build Windows app
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build Windows application
+        shell: pwsh
+        run: ./build_windows_app.ps1
+
+      - name: Verify release contents
+        shell: pwsh
+        run: |
+          $package = "dist/windows/大家的日语词库-Windows"
+          if (-not (Test-Path "$package/大家的日语词库工具.exe")) { throw "Windows executable is missing" }
+          if (-not (Test-Path "$package/data/vocabulary.json")) { throw "Bundled vocabulary.json is missing" }
+          if (-not (Test-Path "$package/output")) { throw "Output directory is missing" }
+
+      - name: Create Windows zip
+        shell: pwsh
+        run: Compress-Archive -Path "dist/windows/大家的日语词库-Windows" -DestinationPath "dist/大家的日语词库-Windows.zip" -Force
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: minna-no-nihongo-vocabulary-windows
+          path: dist/大家的日语词库-Windows.zip
+          if-no-files-found: error
+          retention-days: 14

@@ -37,9 +37,12 @@ BODY_FONT = Font(name="Yu Gothic", size=11, color="172B3A")
 ALIGN = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
 
-def load_records() -> list[dict]:
+def load_records(data_path: Path | None = None) -> list[dict]:
     """读取并校验词库的必要字段。"""
-    records = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+    source = Path(data_path) if data_path else DATA_FILE
+    records = json.loads(source.read_text(encoding="utf-8"))
+    if not isinstance(records, list) or not records:
+        raise ValueError("词库 JSON 必须是非空数组。")
     required = {"id", "lesson", "order", "type", "japanese", "chinese"}
     for index, record in enumerate(records, 1):
         missing = required - record.keys()
@@ -79,7 +82,7 @@ def prepare_workbook() -> Workbook:
     return wb
 
 
-def build_vocabulary(records: list[dict]) -> Path:
+def build_vocabulary(records: list[dict], output_dir: Path | None = None) -> Path:
     """生成阅读词库和程序读取用 Vocabulary 工作表。"""
     wb = prepare_workbook()
     max_lesson = max(int(record["lesson"]) for record in records)
@@ -118,24 +121,26 @@ def build_vocabulary(records: list[dict]) -> Path:
         ws.column_dimensions[chr(64 + index)].width = width
     ws.freeze_panes = "A2"
     ws.sheet_view.showGridLines = False
-    path = OUTPUT_DIR / "大家的日语Ⅰ词库.xlsx"
+    destination = Path(output_dir) if output_dir else OUTPUT_DIR
+    destination.mkdir(parents=True, exist_ok=True)
+    path = destination / "大家的日语Ⅰ词库.xlsx"
     wb.save(path)
     return path
 
 
-def build_exam(records: list[dict]) -> Path:
+def build_exam(records: list[dict], output_dir: Path | None = None) -> Path:
     """生成支持任意课程组合、方向和数量的默写工作簿。"""
-    eligible = [r for r in records if r.get("type") in {"word", "expression"} and r.get("chinese")]
+    eligible = [r for r in records if r.get("chinese")]
     random.shuffle(eligible)
     wb = prepare_workbook()
 
     settings = wb.create_sheet("设置")
     rows = [
-        ["默写设置", "选择值"], ["方向", "日译中"], ["课程", "1"], ["随机数量", 20],
+        ["默写设置", "选择值"], ["方向", "中译日"], ["课程", "全部"], ["随机数量", 20],
         ["刷新方式", "重新运行一键生成脚本"], ["随机种子", "每次生成自动刷新"],
         ["可选方向", "日译中 / 中译日"], ["课程填写示例", "单课：3；多课：1,3,5；全部：全部"],
         ["可选数量", "20 / 50 / 100 / 200 / 全部"],
-        ["题目范围", "所选课程的全部单词和固定表达（不含例句）"],
+        ["题目范围", "所选课程的全部记录"],
     ]
     for row in rows:
         settings.append(row)
@@ -190,18 +195,25 @@ def build_exam(records: list[dict]) -> Path:
         exam.row_dimensions[row].height = 36
     exam.freeze_panes = "A2"
     exam.sheet_view.showGridLines = False
-    path = OUTPUT_DIR / "大家的日语Ⅰ默写.xlsx"
+    destination = Path(output_dir) if output_dir else OUTPUT_DIR
+    destination.mkdir(parents=True, exist_ok=True)
+    path = destination / "大家的日语Ⅰ默写.xlsx"
     wb.save(path)
     return path
 
 
-def build_workbooks() -> None:
+def build_workbooks(
+    data_path: Path | None = None,
+    output_dir: Path | None = None,
+) -> tuple[Path, Path]:
     """从 JSON 重新生成两个 Excel 文件。"""
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    records = load_records()
-    build_vocabulary(records)
-    build_exam(records)
-    print(f"已生成 {len(records)} 条记录，输出目录：{OUTPUT_DIR}")
+    destination = Path(output_dir) if output_dir else OUTPUT_DIR
+    destination.mkdir(parents=True, exist_ok=True)
+    records = load_records(data_path)
+    vocabulary_path = build_vocabulary(records, destination)
+    exam_path = build_exam(records, destination)
+    print(f"已生成 {len(records)} 条记录，输出目录：{destination}")
+    return vocabulary_path, exam_path
 
 
 if __name__ == "__main__":
