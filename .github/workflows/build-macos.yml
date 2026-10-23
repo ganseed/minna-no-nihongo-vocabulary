@@ -28,14 +28,20 @@ jobs:
           chmod +x build_macos_app.sh
           ./build_macos_app.sh
 
-      - name: Test bundled application generation
+      - name: Verify resources are embedded in the app bundle
+        run: |
+          app="dist/macos/大家的日语词库-macOS/大家的日语词库工具.app"
+          test -f "$app/Contents/Resources/data/vocabulary.json"
+          test -f "$app/Contents/Resources/template/默写宏模板.xlsm"
+
+      - name: Test bundled application generation after relocation
         run: |
           package="dist/macos/大家的日语词库-macOS"
           standalone="$RUNNER_TEMP/vocabulary-standalone"
           mkdir -p "$standalone"
           ditto "$package/大家的日语词库工具.app" "$standalone/大家的日语词库工具.app"
           "$standalone/大家的日语词库工具.app/Contents/MacOS/大家的日语词库工具" --generate-excel-and-exit --output "$package/output"
-          python3 -c "from pathlib import Path; from openpyxl import load_workbook; p=Path('$package')/'output'/'大家的日语Ⅰ默写.xlsx'; assert p.is_file(), 'Bundled generation failed'; assert load_workbook(p)['默写'].max_row == 21, 'Unexpected blank question rows'"
+          python3 -c "from pathlib import Path; from openpyxl import load_workbook; root=Path('$package')/'output'; normal=root/'大家的日语Ⅰ默写.xlsx'; macro=root/'大家的日语Ⅰ默写-宏版.xlsm'; assert normal.is_file(), 'Bundled normal workbook generation failed'; assert load_workbook(normal)['默写'].max_row == 21, 'Unexpected blank question rows'; assert macro.is_file(), 'Bundled macro workbook generation failed'"
 
       - name: Verify release contents
         run: |
