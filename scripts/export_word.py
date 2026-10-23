@@ -10,6 +10,7 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 from scripts.random_exam import filter_records, load_dataset
 from scripts.excel_builder import atomic_output
@@ -29,7 +30,11 @@ def export_word(data_path: Path, output_path: Path, *, lessons=None) -> Path:
         grouped[record["lesson"]].append(record)
     document = Document()
     normal = document.styles["Normal"]
-    normal.font.name = "Yu Gothic"
+    normal.font.name = "SimHei"
+    normal.element.get_or_add_rPr().rFonts.set(qn("w:eastAsia"), "SimHei")
+    for name in ("Heading 1", "Heading 2"):
+        document.styles[name].font.name = "SimHei"
+        document.styles[name].element.get_or_add_rPr().rFonts.set(qn("w:eastAsia"), "SimHei")
     normal.font.size = Pt(10.5)
     section = document.sections[0]
     section.page_width, section.page_height = Cm(21), Cm(29.7)
@@ -53,6 +58,9 @@ def export_word(data_path: Path, output_path: Path, *, lessons=None) -> Path:
             cells = table.add_row().cells
             cells[0].width, cells[1].width = Cm(9), Cm(8.4)
             cells[0].text, cells[1].text = item["japanese"], item["chinese"]
+            for run in cells[0].paragraphs[0].runs:
+                run.font.name = "Yu Gothic"
+                run._element.get_or_add_rPr().rFonts.set(qn("w:eastAsia"), "Yu Gothic")
             for cell in cells:
                 cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
                 cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -61,7 +69,10 @@ def export_word(data_path: Path, output_path: Path, *, lessons=None) -> Path:
             for item in examples:
                 paragraph = document.add_paragraph()
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                paragraph.add_run(item["japanese"] + "\n" + item["chinese"])
+                run = paragraph.add_run(item["japanese"] + "\n")
+                run.font.name = "Yu Gothic"
+                run._element.get_or_add_rPr().rFonts.set(qn("w:eastAsia"), "Yu Gothic")
+                paragraph.add_run(item["chinese"])
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with atomic_output(output_path) as temporary:
         document.save(temporary)

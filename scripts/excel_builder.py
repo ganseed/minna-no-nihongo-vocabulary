@@ -36,8 +36,9 @@ THIN = Side(style="thin", color="B8C4CE")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 HEADER_FILL = PatternFill("solid", fgColor="375A7F")
 EXAMPLE_FILL = PatternFill("solid", fgColor="D88C4A")
-HEADER_FONT = Font(name="Yu Gothic", size=11, bold=True, color="FFFFFF")
-BODY_FONT = Font(name="Yu Gothic", size=11, color="172B3A")
+HEADER_FONT = Font(name="SimHei", size=11, bold=True, color="FFFFFF")
+BODY_FONT = Font(name="SimHei", size=11, color="172B3A")
+JAPANESE_FONT = Font(name="Yu Gothic", size=11, color="172B3A")
 ALIGN = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
 
@@ -121,6 +122,8 @@ def build_vocabulary(records, output_dir=None, *, title="大家的日语Ⅰ", un
             for record in examples:
                 ws.append([record["japanese"], record["chinese"]])
         style_range(ws, 2, ws.max_row, 1, 2)
+        for row in ws.iter_rows(min_row=2, min_col=1, max_col=1):
+            row[0].font = JAPANESE_FONT
         style_header(ws, 1, 1, 2)
         if example_row:
             style_header(ws, example_row, 1, 2, EXAMPLE_FILL)
@@ -139,6 +142,10 @@ def build_vocabulary(records, output_dir=None, *, title="大家的日语Ⅰ", un
         ws.append([json.dumps(record[key], ensure_ascii=False) if isinstance(record.get(key), (dict, list))
                    else record.get(key, "") for key in headers])
     style_range(ws, 2, ws.max_row, 1, len(headers))
+    for column, key in enumerate(headers, 1):
+        if key in {"japanese", "kana", "kanji", "dictionary_form"}:
+            for row in ws.iter_rows(min_row=2, min_col=column, max_col=column):
+                row[0].font = JAPANESE_FONT
     style_header(ws, 1, 1, len(headers))
     for index, width in enumerate([16, 10, 10, 14, 40, 24, 24, 40, 24, 16, 16, 24], 1):
         ws.column_dimensions[get_column_letter(index)].width = width
@@ -162,6 +169,10 @@ def build_exam(records, output_dir=None, *, lessons=None, count=20, direction="z
             ws.append([q["number"], q["question"], "", q["answer"]])
             ws.row_dimensions[ws.max_row].height = row_height(q["question"], q["answer"])
         style_range(ws, 2, ws.max_row, 1, 4)
+        for row in ws.iter_rows(min_row=2, max_col=4):
+            row[3].font = JAPANESE_FONT
+            if direction == "jp_to_zh":
+                row[1].font = JAPANESE_FONT
         style_header(ws, 1, 1, 4)
         for col, width in {"A": 9, "B": 40, "C": 30, "D": 34}.items():
             ws.column_dimensions[col].width = width
@@ -203,9 +214,10 @@ def build_macro_exam(records, output_dir=None, *, lessons=None, count=20, direct
         vba_path.write_bytes(vba_project)
         with xlsxwriter.Workbook(temporary, {"strings_to_formulas": False, "strings_to_urls": False}) as wb:
             wb.add_vba_project(vba_path)
-            basic = {"font_name": "Yu Gothic", "font_size": 11, "font_color": "#172B3A",
+            basic = {"font_name": "SimHei", "font_size": 11, "font_color": "#172B3A",
                      "align": "center", "valign": "vcenter", "text_wrap": True}
             body = wb.add_format(basic)
+            japanese_body = wb.add_format({**basic, "font_name": "Yu Gothic"})
             header = wb.add_format({**basic, "bold": True, "font_color": "#FFFFFF",
                                     "bg_color": "#375A7F", "border": 1})
             borders = wb.add_format({"border": 1, "border_color": "#B8C4CE"})
@@ -241,10 +253,11 @@ def build_macro_exam(records, output_dir=None, *, lessons=None, count=20, direct
             source.write_row(0, 0, ["lesson", "japanese", "chinese", "type", "id"], header)
             for row, record in enumerate(eligible, 1):
                 source.write_row(row, 0, [record[k] for k in ["lesson", "japanese", "chinese", "type", "id"]], body)
+                source.write(row, 1, record["japanese"], japanese_body)
             source.hide()
             for sheet in (exam,):
                 sheet.set_column("A:A", 9, body)
-                sheet.set_column("B:B", 40, body)
+                sheet.set_column("B:B", 40, japanese_body if direction == "jp_to_zh" else body)
                 sheet.set_column("C:C", 30, body)
                 sheet.set_default_row(36)
                 sheet.freeze_panes(1, 1)
@@ -257,14 +270,17 @@ def build_macro_exam(records, output_dir=None, *, lessons=None, count=20, direct
                 # VBA 清除旧题后，旧边框随 A 列变空自动消失；增题时自动补齐。
                 sheet.conditional_format(1, 0, len(eligible), 3,
                     {"type": "formula", "criteria": '$A2<>""', "format": borders})
-            exam.set_column("D:D", 34, body)
+            exam.set_column("D:D", 34, japanese_body)
             exam.set_column("F:F", 28, body)
             exam.insert_button("F2", {"macro": "RegenerateExam", "caption": "重新随机生成", "width": 150, "height": 42})
             exam.write_url("F5", "internal:'设置'!B2", body, "修改课程、方向和题数")
             exam.write("F7", "每次点击重新抽题并清空旧作答；答案在右侧D列。", body)
             exam.write_row(0, 0, ["序号", "题目", "作答", "答案"], header)
             for row, q in enumerate(questions, 1):
-                exam.write_row(row, 0, [row, q["question"], "", q["answer"]], body)
+                exam.write(row, 0, row, body)
+                exam.write(row, 1, q["question"], japanese_body if direction == "jp_to_zh" else body)
+                exam.write_blank(row, 2, None, body)
+                exam.write(row, 3, q["answer"], japanese_body)
             # Excel 原生动态打印区域：题数由 VBA 写入的 A 列决定，不受历史最多题数影响。
             for name in ("默写",):
                 wb.define_name(f"'{name}'!_xlnm.Print_Area",

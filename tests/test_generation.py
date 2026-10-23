@@ -37,6 +37,25 @@ class ExportTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_chinese_uses_simhei_while_japanese_and_answers_keep_font(self):
+        for builder in (build_exam, build_macro_exam):
+            for direction in ("zh_to_jp", "jp_to_zh"):
+                path = builder(records(), self.root, count=2, direction=direction)
+                wb = load_workbook(path)
+                ws = wb["默写"]
+                self.assertEqual(ws["A1"].font.name, "SimHei")
+                self.assertEqual(ws["A2"].font.name, "SimHei")
+                self.assertEqual(ws["C2"].font.name, "SimHei")
+                self.assertEqual(ws["B2"].font.name, "Yu Gothic" if direction == "jp_to_zh" else "SimHei")
+                self.assertEqual(ws["D2"].font.name, "Yu Gothic")
+                if builder == build_macro_exam:
+                    self.assertEqual(ws.column_dimensions["D"].font.name, "Yu Gothic")
+                wb.close()
+        wb = load_workbook(build_vocabulary(records(), self.root))
+        self.assertEqual(wb["Lesson03"]["A2"].font.name, "Yu Gothic")
+        self.assertEqual(wb["Lesson03"]["B2"].font.name, "SimHei")
+        wb.close()
+
     def test_twenty_questions_means_twenty_rows_and_inline_answers(self):
         path = build_exam(records(250), self.root, count=20, seed=1)
         wb = load_workbook(path, data_only=True)
