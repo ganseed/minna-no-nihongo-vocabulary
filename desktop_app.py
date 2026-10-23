@@ -7,10 +7,30 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from tkinter import font as tkfont
 
 from scripts.excel_builder import OUTPUT_DIR, build_workbooks
 from scripts.export_word import export_word
 from scripts.random_exam import DIRECTIONS, filter_records, load_dataset, parse_count, parse_lessons
+
+
+def enable_high_dpi() -> None:
+    """必须在创建 Tk 窗口前设置，避免 Windows 对文字进行位图拉伸。"""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    try:
+        if ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4)):
+            return
+    except (AttributeError, OSError):
+        pass
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except (AttributeError, OSError):
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except (AttributeError, OSError):
+            pass
 
 
 def default_data_file() -> Path:
@@ -25,10 +45,12 @@ def open_folder(path: Path) -> None:
 
 class VocabularyApp(tk.Tk):
     def __init__(self) -> None:
+        enable_high_dpi()
         super().__init__()
+        self.withdraw()
+        self._configure_appearance()
         self.title("大家的日语词库工具")
-        self.geometry("800x650")
-        self.minsize(760, 620)
+
         builtin = default_data_file()
         self.data_path = tk.StringVar(value=str(builtin) if builtin.is_file() else "")
         self.output_path = tk.StringVar(value=str(OUTPUT_DIR))
@@ -36,6 +58,8 @@ class VocabularyApp(tk.Tk):
         self.amount = tk.StringVar(value="20")
         self.direction = tk.StringVar(value="中译日")
         self.preview = tk.StringVar()
+        self.question_total = tk.StringVar(value="—")
+        self.library_title = tk.StringVar(value="当前词库")
         self.available_units = tk.StringVar()
         self.unit_label = tk.StringVar(value="课程")
         self.status = tk.StringVar(value="每次生成都会重新随机。宏版可在 Excel 内手动反复随机，答案在作答栏右侧。")
@@ -49,48 +73,138 @@ class VocabularyApp(tk.Tk):
         self._update_preview()
         self.after(100, self._poll_results)
         self.protocol("WM_DELETE_WINDOW", self._close)
+        self.update_idletasks()
+        width = min(max(self.winfo_reqwidth(), self.px(820)), self.winfo_screenwidth() - self.px(56))
+        height = min(self.winfo_reqheight(), self.winfo_screenheight() - self.px(100))
+        self.geometry(f"{width}x{height}+{max(0, (self.winfo_screenwidth()-width)//2)}+{max(0, (self.winfo_screenheight()-height)//2-self.px(20))}")
+        self.minsize(min(width, self.px(760)), min(height, self.px(620)))
+        self.deiconify()
 
     def _control(self, widget):
         self.controls.append((widget, str(widget.cget("state"))))
         return widget
 
+    def _configure_appearance(self):
+        self.ui_scale = max(1.0, self.winfo_fpixels("1i") / 96.0)
+        candidates = ("Microsoft YaHei UI", "Microsoft YaHei") if sys.platform == "win32" else ("PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC")
+        available = set(tkfont.families(self))
+        self.font_family = next((name for name in candidates if name in available), "TkDefaultFont")
+        for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkTooltipFont"):
+            tkfont.nametofont(name).configure(family=self.font_family, size=10)
+        self.option_add("*TCombobox*Listbox.font", (self.font_family, 10))
+        self.option_add("*TCombobox*Listbox.background", "#FFFFFF")
+        self.option_add("*TCombobox*Listbox.selectBackground", "#4F46E5")
+        self.configure(background="#F3F5FA")
+        # 用原生像素图标替换 Tk 默认图标，不引入图片依赖。
+        self.app_icon = tk.PhotoImage(width=32, height=32)
+        self.app_icon.put("#4F46E5", to=(0, 0, 32, 32))
+        self.app_icon.put("#FFFFFF", to=(7, 6, 25, 26))
+        self.app_icon.put("#4F46E5", to=(10, 9, 22, 14))
+        self.app_icon.put("#4F46E5", to=(10, 17, 22, 23))
+        self.iconphoto(True, self.app_icon)
+        style = ttk.Style(self)
+        style.theme_use("clam")
+        style.configure(".", font=(self.font_family, 10), background="#F3F5FA", foreground="#1E293B")
+        style.configure("TFrame", background="#F3F5FA")
+        style.configure("Card.TFrame", background="#FFFFFF")
+        style.configure("TLabel", background="#F3F5FA")
+        style.configure("Title.TLabel", font=(self.font_family, 24, "bold"), foreground="#17223B")
+        style.configure("Muted.TLabel", foreground="#64748B")
+        style.configure("Card.TLabel", background="#FFFFFF")
+        style.configure("CardTitle.TLabel", background="#FFFFFF", font=(self.font_family, 12, "bold"))
+        style.configure("Hint.TLabel", background="#FFFFFF", foreground="#64748B", font=(self.font_family, 9))
+        style.configure("Metric.TLabel", background="#EEF2FF", foreground="#4338CA", font=(self.font_family, 27, "bold"))
+        style.configure("Summary.TFrame", background="#EEF2FF")
+        style.configure("Summary.TLabel", background="#EEF2FF", foreground="#4338CA")
+        style.configure("TEntry", padding=self.px(9), fieldbackground="#F8FAFC", bordercolor="#DCE2EC", lightcolor="#DCE2EC", darkcolor="#DCE2EC")
+        style.configure("TCombobox", padding=self.px(9), fieldbackground="#F8FAFC", background="#F8FAFC", bordercolor="#DCE2EC", arrowsize=self.px(14))
+        for control in ("TEntry", "TCombobox"):
+            style.map(control, bordercolor=[("focus", "#6366F1")], fieldbackground=[("disabled", "#F1F5F9"), ("readonly", "#F8FAFC")], foreground=[("disabled", "#94A3B8"), ("readonly", "#1E293B")])
+        style.configure("TButton", padding=(self.px(14), self.px(9)), background="#EDF0F7", foreground="#334155", borderwidth=0, focusthickness=2, focuscolor="#6366F1")
+        style.map("TButton", background=[("disabled", "#E8ECF3"), ("pressed", "#D9DFED"), ("active", "#E2E7F2")], foreground=[("disabled", "#94A3B8")])
+        style.configure("Primary.TButton", background="#4F46E5", foreground="#FFFFFF", font=(self.font_family, 11, "bold"), padding=(self.px(18), self.px(12)))
+        style.map("Primary.TButton", background=[("disabled", "#CDD2EC"), ("pressed", "#3730A3"), ("active", "#4338CA")], foreground=[("disabled", "#F8FAFC")])
+        style.configure("Secondary.TButton", padding=(self.px(18), self.px(12)), font=(self.font_family, 11))
+        style.configure("Horizontal.TProgressbar", troughcolor="#E8ECF4", background="#6366F1", borderwidth=0, thickness=self.px(3))
+
+    def px(self, value):
+        return round(value * self.ui_scale)
+
     def _build_ui(self):
-        frame = ttk.Frame(self, padding=24)
-        frame.pack(fill="both", expand=True)
-        ttk.Label(frame, text="大家的日语词库工具", font=("Arial", 21, "bold")).pack(anchor="w")
-        ttk.Label(frame, text="软件设置用于初次生成；打开宏版后，可在 Excel 中更改设置并反复随机。", foreground="#52606D").pack(anchor="w", pady=(8, 18))
-        files = ttk.LabelFrame(frame, text="文件位置", padding=12)
+        # 内容可滚动：高缩放和小屏幕下仍能访问底部操作。
+        shell = ttk.Frame(self)
+        shell.pack(fill="both", expand=True)
+        canvas = tk.Canvas(shell, background="#F3F5FA", highlightthickness=0, width=self.px(820))
+        scrollbar = ttk.Scrollbar(shell, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        content = ttk.Frame(canvas, padding=self.px(28))
+        window_id = canvas.create_window(0, 0, window=content, anchor="nw")
+        def resize_content(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            if content.winfo_reqheight() > canvas.winfo_height():
+                scrollbar.pack(side="right", fill="y")
+            else:
+                scrollbar.pack_forget()
+        def resize_canvas(event):
+            canvas.itemconfigure(window_id, width=event.width)
+            resize_content()
+        content.bind("<Configure>", resize_content)
+        canvas.bind("<Configure>", resize_canvas)
+        self.bind("<MouseWheel>", lambda event: canvas.yview_scroll(-int(event.delta / 120) if sys.platform == "win32" else -event.delta, "units") if content.winfo_reqheight() > canvas.winfo_height() and not isinstance(event.widget, ttk.Combobox) else None)
+        ttk.Label(content, text="日语练习", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(content, text="选好课程，开始今天的默写。", style="Muted.TLabel").pack(anchor="w", pady=(self.px(5), self.px(22)))
+        files = ttk.Frame(content, style="Card.TFrame", padding=self.px(18))
         files.pack(fill="x")
         files.columnconfigure(1, weight=1)
+        ttk.Label(files, text="词库与保存位置", style="CardTitle.TLabel").grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, self.px(12)))
         for row, (label, var, caption, action) in enumerate([
-            ("词库", self.data_path, "选择 JSON", self.choose_data_file),
-            ("保存到", self.output_path, "选择文件夹", self.choose_output_folder),
-        ]):
-            ttk.Label(files, text=label).grid(row=row, column=0, padx=(0, 10), pady=6)
-            self._control(ttk.Entry(files, textvariable=var)).grid(row=row, column=1, sticky="ew", padx=(0, 10), pady=6)
+            ("词库文件", self.data_path, "更换词库", self.choose_data_file),
+            ("保存位置", self.output_path, "选择位置", self.choose_output_folder),
+        ], 1):
+            ttk.Label(files, text=label, style="Card.TLabel").grid(row=row, column=0, padx=(0, self.px(14)), pady=self.px(5))
+            self._control(ttk.Entry(files, textvariable=var, width=24)).grid(row=row, column=1, sticky="ew", padx=(0, self.px(10)), pady=self.px(5))
             self._control(ttk.Button(files, text=caption, command=action)).grid(row=row, column=2)
-        options = ttk.LabelFrame(frame, text="本次练习", padding=14)
-        options.pack(fill="x", pady=(16, 0))
-        options.columnconfigure(1, weight=1)
-        ttk.Label(options, textvariable=self.unit_label).grid(row=0, column=0, padx=(0, 16), sticky="w")
-        self.unit_picker = self._control(ttk.Combobox(options, textvariable=self.lessons, values=["全部"]))
-        self.unit_picker.grid(row=0, column=1, columnspan=3, sticky="ew")
-        ttk.Label(options, textvariable=self.available_units, foreground="#52606D", wraplength=600).grid(row=1, column=1, columnspan=3, sticky="w", pady=(5, 12))
-        ttk.Label(options, text="方向").grid(row=2, column=0, sticky="w")
-        self._control(ttk.Combobox(options, textvariable=self.direction, values=list(DIRECTIONS), state="readonly", width=14)).grid(row=2, column=1, sticky="w")
-        ttk.Label(options, text="题数").grid(row=2, column=2, padx=(16, 10))
-        self._control(ttk.Combobox(options, textvariable=self.amount, values=[20, 50, 100, 200, "全部"], width=12)).grid(row=2, column=3, sticky="e")
-        ttk.Label(options, textvariable=self.preview, wraplength=680, foreground="#375A7F").grid(row=3, column=0, columnspan=4, sticky="w", pady=(14, 0))
-        actions = ttk.Frame(frame)
-        actions.pack(fill="x", pady=(18, 12))
+        options = ttk.Frame(content, style="Card.TFrame", padding=self.px(18))
+        options.pack(fill="x", pady=(self.px(14), 0))
+        options.columnconfigure((0, 1, 2), weight=1, uniform="selection")
+        ttk.Label(options, text="本次练习", style="CardTitle.TLabel").grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, self.px(14)))
+        for col, text in enumerate((None, "默写方向", "题目数量")):
+            ttk.Label(options, text=text, textvariable=self.unit_label if col == 0 else None, style="Card.TLabel").grid(row=1, column=col, sticky="w", pady=(0, self.px(6)))
+        self.unit_picker = self._control(ttk.Combobox(options, textvariable=self.lessons, values=["全部"], width=12))
+        self.unit_picker.grid(row=2, column=0, sticky="ew", padx=(0, self.px(14)))
+        self._control(ttk.Combobox(options, textvariable=self.direction, values=list(DIRECTIONS), state="readonly", width=12)).grid(row=2, column=1, sticky="ew", padx=(0, self.px(14)))
+        self._control(ttk.Combobox(options, textvariable=self.amount, values=[20, 50, 100, 200, "全部"], width=10)).grid(row=2, column=2, sticky="ew")
+        self.unit_hint = ttk.Label(options, textvariable=self.available_units, style="Hint.TLabel", wraplength=self.px(670))
+        self.unit_hint.grid(row=3, column=0, columnspan=3, sticky="w", pady=(self.px(10), 0))
+        summary = ttk.Frame(content, style="Summary.TFrame", padding=(self.px(18), self.px(14)))
+        summary.pack(fill="x", pady=(self.px(14), 0))
+        ttk.Label(summary, textvariable=self.question_total, style="Metric.TLabel").pack(side="left", padx=(0, self.px(12)))
+        ttk.Label(summary, text="题", style="Summary.TLabel").pack(side="left", padx=(0, self.px(20)))
+        detail = ttk.Frame(summary, style="Summary.TFrame")
+        detail.pack(side="left", fill="both", expand=True)
+        ttk.Label(detail, textvariable=self.library_title, style="Summary.TLabel", font=(self.font_family, 11, "bold")).pack(anchor="w")
+        self.preview_label = ttk.Label(detail, textvariable=self.preview, style="Summary.TLabel", wraplength=self.px(530))
+        self.preview_label.pack(anchor="w", pady=(self.px(4), 0))
+        actions = ttk.Frame(content)
+        actions.pack(fill="x", pady=(self.px(18), self.px(10)))
         actions.columnconfigure((0, 1), weight=1)
-        self._control(ttk.Button(actions, text="生成 Excel（含手动随机宏版）", command=lambda: self.start_generation("excel"))).grid(row=0, column=0, sticky="ew", padx=(0, 8), ipady=10)
-        self._control(ttk.Button(actions, text="生成所选课程 Word 词库", command=lambda: self.start_generation("word"))).grid(row=0, column=1, sticky="ew", padx=(8, 0), ipady=10)
-        self.progress = ttk.Progressbar(frame, mode="indeterminate")
-        self.progress.pack(fill="x", pady=(0, 10))
-        ttk.Button(frame, text="打开输出文件夹", command=self._open_output).pack(anchor="w")
-        ttk.Separator(frame).pack(fill="x", pady=14)
-        ttk.Label(frame, textvariable=self.status, wraplength=720, justify="left").pack(fill="x")
+        self._control(ttk.Button(actions, text="生成 Excel · 含随机宏版", style="Primary.TButton", command=lambda: self.start_generation("excel"))).grid(row=0, column=0, sticky="ew", padx=(0, self.px(10)))
+        self._control(ttk.Button(actions, text="导出 Word 词库", style="Secondary.TButton", command=lambda: self.start_generation("word"))).grid(row=0, column=1, sticky="ew")
+        self.progress = ttk.Progressbar(content, mode="indeterminate")
+        # 仅生成过程中显示进度条。
+        footer = ttk.Frame(content)
+        self.footer = footer
+        footer.pack(fill="x")
+        self.status_label = ttk.Label(footer, textvariable=self.status, style="Muted.TLabel", wraplength=self.px(540), justify="left")
+        self.status_label.pack(side="left", fill="x", expand=True, padx=(0, self.px(12)))
+        ttk.Button(footer, text="打开文件夹", command=self._open_output).pack(side="right")
+        content.bind("<Configure>", lambda event: (resize_content(), self.unit_hint.configure(wraplength=max(self.px(300), event.width-self.px(92))), self.preview_label.configure(wraplength=max(self.px(220), event.width-self.px(230))), self.status_label.configure(wraplength=max(self.px(220), event.width-self.px(210)))))
+        self.content_canvas = canvas
+        self.content_frame = content
+        # Canvas 的自然高度不随内部 frame 改变，初始尺寸按完整内容计算。
+        self.update_idletasks()
+        canvas.configure(height=content.winfo_reqheight())
 
     def choose_data_file(self):
         selected = filedialog.askopenfilename(title="选择词库 JSON", initialdir=str(default_data_file().parent), filetypes=[("JSON 文件", "*.json"), ("所有文件", "*.*")])
@@ -141,8 +255,12 @@ class VocabularyApp(tk.Tk):
             available = sum(bool(r["chinese"].strip()) for r in selected)
             actual = available if count is None else min(count, available)
             courses = len({r["lesson"] for r in selected})
-            self.preview.set(f"{metadata['title']}：已选 {courses} 个{metadata['unit_label']}，共 {len(selected)} 条词条，可用 {available} 题；本次将生成 {actual} 题。" + (" 题数不足时按实际数量生成。" if count is not None and count > available else ""))
+            self.question_total.set(str(actual))
+            self.library_title.set(metadata["title"])
+            self.preview.set(f"已选 {courses} 个{metadata['unit_label']} · 可用 {available} 题 · 每次重新随机" + ("；按实际题数生成" if count is not None and count > available else ""))
         except (OSError, UnicodeError, ValueError) as error:
+            self.question_total.set("—")
+            self.library_title.set("请检查练习设置")
             self.preview.set(str(error))
 
     def start_generation(self, kind):
@@ -163,6 +281,7 @@ class VocabularyApp(tk.Tk):
         self.busy = True
         for control, _ in self.controls:
             control.configure(state="disabled")
+        self.progress.pack(fill="x", pady=(0, self.px(10)), before=self.footer)
         self.progress.start(12)
         self.status.set("正在生成，请稍候……")
         threading.Thread(target=self._generate, args=(kind, source, destination, lessons, count, direction), daemon=True).start()
@@ -187,6 +306,7 @@ class VocabularyApp(tk.Tk):
         else:
             self.busy = False
             self.progress.stop()
+            self.progress.pack_forget()
             for control, state in self.controls:
                 control.configure(state=state)
             if success:

@@ -29,6 +29,7 @@ Invoke-Python -m pip install --upgrade pip
 Invoke-Python -m pip install -r (Join-Path $ProjectRoot "requirements.txt") pyinstaller
 
 Invoke-Python -m PyInstaller --noconfirm --clean --onefile --windowed `
+  --manifest (Join-Path $ProjectRoot "windows.manifest") `
   --name "大家的日语词库工具" `
   --distpath $PackageRoot `
   --workpath $BuildRoot `
