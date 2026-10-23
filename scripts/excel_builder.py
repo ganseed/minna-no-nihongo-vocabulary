@@ -40,9 +40,15 @@ def resource_file(relative: str) -> Path:
 
 
 def default_output_dir() -> Path:
-    # Keep generated files alongside the app/package, not in a machine-specific
-    # absolute Documents path. The package's output/ directory is created on demand.
-    return project_root() / "output"
+    # Prefer a clean relative output/ folder beside the app/package. macOS may
+    # run downloaded apps from a read-only AppTranslocation path, or the app may
+    # live in a protected directory such as /Applications; use Documents only
+    # when the package location cannot be written to.
+    root = project_root()
+    if getattr(sys, "frozen", False) and sys.platform == "darwin":
+        if "AppTranslocation" in root.parts or not os.access(root, os.W_OK):
+            return Path.home() / "Documents" / "日语词库" / "output"
+    return root / "output"
 
 
 PROJECT_ROOT = project_root()
