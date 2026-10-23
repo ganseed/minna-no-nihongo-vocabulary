@@ -66,7 +66,7 @@ class ExportTests(unittest.TestCase):
         (embedded / "data" / "vocabulary.json").write_text("[]", encoding="utf-8")
         (embedded / "template" / "默写宏模板.xlsm").write_bytes(b"template")
         with patch.object(builder.sys, "frozen", True, create=True), patch.object(builder.sys, "platform", "darwin"), patch.object(builder.sys, "executable", str(bundle)), patch.object(builder.sys, "_MEIPASS", str(embedded), create=True), patch.object(builder.Path, "home", return_value=self.root):
-            self.assertEqual(builder.default_output_dir(), self.root / "Documents" / "日语词库" / "output")
+            self.assertEqual(builder.default_output_dir(), bundle.parents[3] / "output")
             self.assertEqual(builder.resource_file("data/vocabulary.json"), embedded / "data" / "vocabulary.json")
             self.assertEqual(builder.resource_file("template/默写宏模板.xlsm"), embedded / "template" / "默写宏模板.xlsm")
             external = bundle.parents[3] / "data" / "vocabulary.json"
