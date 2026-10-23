@@ -72,7 +72,32 @@ class ExportTests(unittest.TestCase):
             external = bundle.parents[3] / "data" / "vocabulary.json"
             external.parent.mkdir(parents=True)
             external.write_text("[]", encoding="utf-8")
-            self.assertEqual(builder.resource_file("data/vocabulary.json"), external)
+            self.assertEqual(builder.resource_file("data/vocabulary.json"), external.resolve())
+
+    def test_macos_resources_fall_back_to_app_contents_resources(self):
+        from unittest.mock import patch
+        from scripts import excel_builder as builder
+
+        # Simulate a translocated app copied away from the outer ZIP folder:
+        # no sibling resources and no PyInstaller _MEIPASS resource copy.
+        executable = (self.root / "AppTranslocation" / "d" / "Tool.app" /
+                      "Contents" / "MacOS" / "tool")
+        resources = executable.parent.parent / "Resources"
+        (resources / "data").mkdir(parents=True)
+        (resources / "template").mkdir()
+        vocabulary = resources / "data" / "vocabulary.json"
+        template = resources / "template" / "默写宏模板.xlsm"
+        vocabulary.write_text("[]", encoding="utf-8")
+        template.write_bytes(b"template")
+
+        embedded = self.root / "empty-meipass"
+        embedded.mkdir()
+        with patch.object(builder.sys, "frozen", True, create=True), \
+             patch.object(builder.sys, "platform", "darwin"), \
+             patch.object(builder.sys, "executable", str(executable)), \
+             patch.object(builder.sys, "_MEIPASS", str(embedded), create=True):
+            self.assertEqual(builder.resource_file("data/vocabulary.json"), vocabulary.resolve())
+            self.assertEqual(builder.resource_file("template/默写宏模板.xlsm"), template.resolve())
 
     def test_twenty_questions_means_twenty_rows_and_inline_answers(self):
         path = build_exam(records(250), self.root, count=20, seed=1)

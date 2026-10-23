@@ -1,0 +1,14 @@
+name: Test macOS app bundle
+
+on:
+  push:
+    branches: [main, 'codex/**', 'fix/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos-app-bundle:
+    uses: ./.github/workflows/build-macos.yml
