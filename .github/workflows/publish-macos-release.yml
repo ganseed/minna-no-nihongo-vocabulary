@@ -1,19 +1,16 @@
 name: Publish macOS release
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build:
-    if: startsWith(github.event.head_commit.message, 'Publish v1.1')
     uses: ./.github/workflows/build-macos.yml
 
   publish:
-    if: startsWith(github.event.head_commit.message, 'Publish v1.1')
     needs: build
     runs-on: ubuntu-latest
     steps:
