@@ -6,6 +6,8 @@
 
 到 [Releases](https://github.com/ganseed/minna-no-nihongo-vocabulary/releases/latest) 下载适合平台的 ZIP，**完整解压**后双击“大家的日语词库工具”。保留应用、`data`、`template` 和 `output` 的目录关系。
 
+当前发布包：Windows 64位；macOS Apple Silicon（M1及更新的M系列芯片）。
+
 1. 启动时自动选择发布包内置词库，也可选择其他兼容 JSON。
 2. 填写课程：单课 `3`，多课 `1,3,5`，连续课程 `1-5`，或 `全部`。
 3. 选择中译日／日译中、题数和输出文件夹。生成前会显示可用题数和实际生成题数。
