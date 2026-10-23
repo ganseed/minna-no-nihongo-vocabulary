@@ -37,13 +37,14 @@ class ExportTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def test_twenty_questions_means_twenty_rows_and_separate_answers(self):
+    def test_twenty_questions_means_twenty_rows_and_inline_answers(self):
         path = build_exam(records(250), self.root, count=20, seed=1)
         wb = load_workbook(path, data_only=True)
         self.assertEqual(wb["默写"].max_row, 21)
-        self.assertEqual(wb["答案"].max_row, 21)
-        self.assertEqual(str(wb["默写"].print_area), "'默写'!$A$1:$C$21")
-        self.assertEqual(wb["默写"].max_column, 3)
+        self.assertNotIn("答案", wb.sheetnames)
+        self.assertTrue(wb["默写"]["D2"].value)
+        self.assertEqual(str(wb["默写"].print_area), "'默写'!$A$1:$D$21")
+        self.assertEqual(wb["默写"].max_column, 4)
         self.assertTrue(all(c.value is None for row in wb["默写"].iter_rows(min_row=2, min_col=3, max_col=3) for c in row))
 
     def test_lesson_filter_and_shortfall_do_not_create_empty_questions(self):
@@ -58,7 +59,7 @@ class ExportTests(unittest.TestCase):
             wb = load_workbook(build_exam(records(250), self.root, count=count))
             self.assertEqual(wb["默写"].max_row, count + 1)
             self.assertEqual(wb["默写"][f"C{count + 1}"].border.bottom.style, "thin")
-            self.assertEqual(str(wb["默写"].print_area), f"'默写'!$A$1:$C${count+1}")
+            self.assertEqual(str(wb["默写"].print_area), f"'默写'!$A$1:$D${count+1}")
 
     def test_macro_has_adaptive_borders_without_preformatted_blank_rows(self):
         for count in [20, 200, 20]:
@@ -67,19 +68,22 @@ class ExportTests(unittest.TestCase):
                 warnings.simplefilter("ignore", UserWarning)
                 wb = load_workbook(path, data_only=True)
             exam = wb["默写"]
-            self.assertEqual(exam.max_row, count + 1)
+            self.assertEqual(max(c.row for row in exam.iter_rows(min_col=1, max_col=1) for c in row if c.value is not None), count + 1)
             self.assertIsNone(exam["A252"].value)
             self.assertIsNone(exam["A252"].border.bottom.style)
-            self.assertTrue(exam.column_dimensions["D"].hidden)
+            self.assertFalse(exam.column_dimensions["D"].hidden)
+            self.assertTrue(exam["D2"].value)
+            self.assertNotIn("答案", wb.sheetnames)
             self.assertEqual(wb["题库"].sheet_state, "hidden")
             with zipfile.ZipFile(path) as z:
                 xml = ET.fromstring(z.read("xl/worksheets/sheet3.xml"))
                 rules = xml.findall("s:conditionalFormatting", NS)
-                self.assertEqual(rules[0].get("sqref"), "A2:C251")
+                self.assertEqual(rules[0].get("sqref"), "A2:D251")
                 self.assertEqual(rules[0].find("s:cfRule/s:formula", NS).text, '$A2<>""')
                 names = ET.fromstring(z.read("xl/workbook.xml")).findall("s:definedNames/s:definedName", NS)
                 print_names = [n for n in names if n.get("name") == "_xlnm.Print_Area"]
-                self.assertEqual(len(print_names), 2)
+                self.assertEqual(len(print_names), 1)
+                self.assertIn("$D:$D", print_names[0].text)
                 self.assertTrue(all("COUNTA('默写'!$A:$A)" in n.text for n in print_names))
                 with zipfile.ZipFile(MACRO_TEMPLATE) as template:
                     self.assertEqual(z.read("xl/vbaProject.bin"), template.read("xl/vbaProject.bin"))
@@ -88,6 +92,56 @@ class ExportTests(unittest.TestCase):
                 border = styles.find("s:dxfs/s:dxf/s:border", NS)
                 self.assertTrue(all(border.find(f"s:{edge}", NS).get("style") == "thin"
                                     for edge in ["left", "right", "top", "bottom"]))
+
+    def test_each_generation_draws_fresh_questions_and_macro_buttons_remain(self):
+        from unittest.mock import patch
+        path = self.root / "input.json"
+        path.write_text(json.dumps(records(100)), encoding="utf-8")
+        draws = []
+        with patch("scripts.excel_builder.secrets.randbits", side_effect=[101, 202]) as entropy:
+            for _ in range(2):
+                paths = build_workbooks(path, self.root)
+                wb = load_workbook(paths[1], data_only=True)
+                draws.append([wb["默写"][f"B{r}"].value for r in range(2, 22)])
+            self.assertEqual(entropy.call_count, 2)
+        self.assertNotEqual(*draws)
+        with zipfile.ZipFile(paths[2]) as z:
+            drawings = [z.read(n).decode("utf-8") for n in z.namelist() if n.endswith(".vml")]
+            self.assertEqual(sum(t.count("<x:FmlaMacro>") for t in drawings), 2)
+            self.assertTrue(all("RegenerateExam" in t for t in drawings))
+            with zipfile.ZipFile(MACRO_TEMPLATE) as original:
+                self.assertEqual(z.read("xl/vbaProject.bin"), original.read("xl/vbaProject.bin"))
+
+    def test_custom_library_and_future_nonconsecutive_groups(self):
+        pool = records(4, 51) + records(3, 108)
+        pool[0]["tags"] = ["旅行", "车站"]
+        path = self.root / "custom.json"
+        path.write_text(json.dumps({"title": "旅行与工作", "unit_label": "主题", "records": pool}), encoding="utf-8")
+        paths = build_workbooks(path, self.root, lessons=[108], count=30)
+        self.assertEqual(paths[0].name, "旅行与工作词库.xlsx")
+        self.assertEqual(paths[2].name, "旅行与工作默写-宏版.xlsm")
+        vocab = load_workbook(paths[0])
+        self.assertIn("主题108", vocab.sheetnames)
+        exam = load_workbook(paths[1], data_only=True)["默写"]
+        self.assertEqual(exam.max_row, 4)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            macro = load_workbook(paths[2], data_only=True)
+        self.assertEqual(macro["题库"].max_row, 8)
+        self.assertEqual([macro["设置"][f"H{r}"].value for r in range(2,5)], ["全部",51,108])
+        self.assertEqual(macro["设置"]["A3"].value, "主题")
+        self.assertEqual(macro["设置"]["B3"].value, "108")
+        extra = load_workbook(build_vocabulary(pool, self.root))["Vocabulary"]
+        self.assertIn("tags", [c.value for c in extra[1]])
+
+    def test_minimal_custom_library_without_courses_still_works(self):
+        path = self.root / "自建词库.json"
+        path.write_text(json.dumps([{"id":"station", "japanese":"えき", "chinese":"车站"}]), encoding="utf-8")
+        loaded = load_vocabulary(path)
+        self.assertEqual(loaded[0]["lesson"], 1)
+        paths = build_workbooks(path, self.root, count=None)
+        self.assertEqual(paths[0].name, "自建词库词库.xlsx")
+        self.assertEqual(load_workbook(paths[1])["默写"].max_row, 2)
 
     def test_all_actual_lessons_only_no_empty_lesson_tabs(self):
         wb = load_workbook(build_vocabulary(records(2, 3) + records(1, 8), self.root))
@@ -135,7 +189,8 @@ class ExportTests(unittest.TestCase):
         selected = [r for r in load_vocabulary(ROOT / "data/vocabulary.json") if r["lesson"] == 3 and r["chinese"].strip()]
         wb = load_workbook(paths[1], data_only=True)
         self.assertEqual(wb["默写"].max_row, len(selected) + 1)
-        self.assertEqual(wb["答案"].max_row, len(selected) + 1)
+        self.assertNotIn("答案", wb.sheetnames)
+        self.assertTrue(wb["默写"]["D2"].value)
 
     def test_normal_and_macro_initial_questions_match_without_fixed_seed(self):
         path = self.root / "input.json"

@@ -11,7 +11,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt
 from docx.oxml import OxmlElement
 
-from scripts.random_exam import filter_records, load_vocabulary
+from scripts.random_exam import filter_records, load_dataset
 from scripts.excel_builder import atomic_output
 
 
@@ -20,7 +20,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def export_word(data_path: Path, output_path: Path, *, lessons=None) -> Path:
     """生成每课分节、例句置后的可编辑 Word 文档。"""
-    records = filter_records(load_vocabulary(data_path), lessons)
+    all_records, metadata = load_dataset(data_path)
+    records = filter_records(all_records, lessons)
     if not records:
         raise ValueError("所选课程没有词条。")
     grouped: dict[int, list[dict]] = defaultdict(list)
@@ -36,7 +37,8 @@ def export_word(data_path: Path, output_path: Path, *, lessons=None) -> Path:
     for index, (lesson, items) in enumerate(sorted(grouped.items())):
         if index:
             document.add_page_break()
-        heading = document.add_heading(f"Lesson {lesson:02d}", level=1)
+        unit_label = "Lesson" if metadata["unit_label"] == "课程" else metadata["unit_label"]
+        heading = document.add_heading(f"{unit_label} {lesson:02d}", level=1)
         heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
         regular = [item for item in items if item["type"] != "example"]
         examples = [item for item in items if item["type"] == "example"]

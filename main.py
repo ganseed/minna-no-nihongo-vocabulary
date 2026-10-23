@@ -8,7 +8,7 @@ from pathlib import Path
 
 from scripts.excel_builder import build_workbooks
 from scripts.export_word import export_word
-from scripts.random_exam import DIRECTIONS, load_vocabulary, parse_count, parse_lessons
+from scripts.random_exam import DIRECTIONS, load_dataset, parse_count, parse_lessons
 
 
 ROOT = Path(__file__).resolve().parent
@@ -29,7 +29,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, help="可选随机种子，仅用于复现试卷")
     args = parser.parse_args()
     try:
-        records = load_vocabulary(args.data)
+        records, metadata = load_dataset(args.data)
         lessons = parse_lessons(args.lessons, (r["lesson"] for r in records))
         if args.command in {"excel", "all"}:
             paths = build_workbooks(args.data, args.output, lessons=lessons,
@@ -37,7 +37,7 @@ def main() -> None:
             for path in paths:
                 print(f"已生成：{path}")
         if args.command in {"word", "all"}:
-            path = export_word(args.data, args.output / "大家的日语Ⅰ词库.docx", lessons=lessons)
+            path = export_word(args.data, args.output / f"{metadata['title']}词库.docx", lessons=lessons)
             print(f"已生成：{path}")
     except (OSError, UnicodeError, ValueError) as error:
         parser.exit(1, f"生成失败：{error}\n")

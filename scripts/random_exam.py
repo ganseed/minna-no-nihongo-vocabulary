@@ -9,15 +9,25 @@ from typing import Iterable
 DIRECTIONS = {"中译日": "zh_to_jp", "日译中": "jp_to_zh"}
 
 
-def load_vocabulary(path: Path) -> list[dict]:
+def load_dataset(path: Path) -> tuple[list[dict], dict]:
     """兼容 UTF-8 BOM，报出具体出错记录，保留词库扩展字段。"""
     try:
-        records = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+        document = json.loads(Path(path).read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as error:
         raise ValueError(f"JSON 第 {error.lineno} 行、第 {error.colno} 列格式有误。") from error
+    metadata = document if isinstance(document, dict) else {}
+    records = metadata.get("records") if metadata else document
     if not isinstance(records, list) or not records:
-        raise ValueError("词库 JSON 必须是非空数组。")
-    required = {"id", "lesson", "order", "type", "japanese", "chinese"}
+        raise ValueError("词库须为非空数组，或包含非空 records 数组的对象。")
+    stem = Path(path).stem
+    title = metadata.get("title", "大家的日语Ⅰ" if stem == "vocabulary" else stem)
+    unit_label = metadata.get("unit_label", "课程")
+    if not isinstance(title, str) or not title.strip() or re.search(r'[\\/:*?"<>|]', title) or len(title) > 80:
+        raise ValueError("词库 title 应为1～80字的名称，不能含文件路径或文件名保留符号。")
+    if not isinstance(unit_label, str) or not unit_label.strip() or len(unit_label) > 10 or re.search(r'[\[\]\\/*?:]', unit_label):
+        raise ValueError("unit_label 应为1～10字，例如“课程”“主题”或“分组”。")
+    metadata = {**metadata, "title": title.strip(), "unit_label": unit_label.strip()}
+    required = {"id", "japanese", "chinese"}
     seen = set()
     for index, record in enumerate(records, 1):
         prefix = f"第 {index} 条记录"
@@ -26,6 +36,9 @@ def load_vocabulary(path: Path) -> list[dict]:
         missing = required - record.keys()
         if missing:
             raise ValueError(f"{prefix}缺少字段：{', '.join(sorted(missing))}")
+        record.setdefault("lesson", 1)
+        record.setdefault("order", index)
+        record.setdefault("type", "word")
         for key in ("id", "type", "japanese", "chinese"):
             if not isinstance(record[key], str):
                 raise ValueError(f"{prefix}的 {key} 必须是文字。")
@@ -37,7 +50,11 @@ def load_vocabulary(path: Path) -> list[dict]:
         for key in ("lesson", "order"):
             if type(record[key]) is not int or record[key] < 1:
                 raise ValueError(f"{prefix}的 {key} 必须是正整数。")
-    return records
+    return records, metadata
+
+
+def load_vocabulary(path: Path) -> list[dict]:
+    return load_dataset(path)[0]
 
 
 def parse_lessons(text: str, available: Iterable[int]) -> list[int] | None:

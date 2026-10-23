@@ -10,7 +10,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from scripts.excel_builder import OUTPUT_DIR, build_workbooks
 from scripts.export_word import export_word
-from scripts.random_exam import DIRECTIONS, filter_records, load_vocabulary, parse_count, parse_lessons
+from scripts.random_exam import DIRECTIONS, filter_records, load_dataset, parse_count, parse_lessons
 
 
 def default_data_file() -> Path:
@@ -36,7 +36,9 @@ class VocabularyApp(tk.Tk):
         self.amount = tk.StringVar(value="20")
         self.direction = tk.StringVar(value="中译日")
         self.preview = tk.StringVar()
-        self.status = tk.StringVar(value="选择课程和题数后生成。普通版只保留实际题目，宏版可反复随机出题。")
+        self.available_units = tk.StringVar()
+        self.unit_label = tk.StringVar(value="课程")
+        self.status = tk.StringVar(value="每次生成都会重新随机。宏版可在 Excel 内手动反复随机，答案在作答栏右侧。")
         self.controls = []
         self.busy = False
         self.results = queue.Queue()
@@ -56,7 +58,7 @@ class VocabularyApp(tk.Tk):
         frame = ttk.Frame(self, padding=24)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text="大家的日语词库工具", font=("Arial", 21, "bold")).pack(anchor="w")
-        ttk.Label(frame, text="先选课程，再生成适合本次练习的词库和默写表。", foreground="#52606D").pack(anchor="w", pady=(8, 18))
+        ttk.Label(frame, text="软件设置用于初次生成；打开宏版后，可在 Excel 中更改设置并反复随机。", foreground="#52606D").pack(anchor="w", pady=(8, 18))
         files = ttk.LabelFrame(frame, text="文件位置", padding=12)
         files.pack(fill="x")
         files.columnconfigure(1, weight=1)
@@ -70,9 +72,10 @@ class VocabularyApp(tk.Tk):
         options = ttk.LabelFrame(frame, text="本次练习", padding=14)
         options.pack(fill="x", pady=(16, 0))
         options.columnconfigure(1, weight=1)
-        ttk.Label(options, text="课程").grid(row=0, column=0, padx=(0, 16), sticky="w")
-        self._control(ttk.Entry(options, textvariable=self.lessons)).grid(row=0, column=1, columnspan=3, sticky="ew")
-        ttk.Label(options, text="例如：3、1,3,5、1-5 或 全部", foreground="#52606D").grid(row=1, column=1, columnspan=3, sticky="w", pady=(5, 12))
+        ttk.Label(options, textvariable=self.unit_label).grid(row=0, column=0, padx=(0, 16), sticky="w")
+        self.unit_picker = self._control(ttk.Combobox(options, textvariable=self.lessons, values=["全部"]))
+        self.unit_picker.grid(row=0, column=1, columnspan=3, sticky="ew")
+        ttk.Label(options, textvariable=self.available_units, foreground="#52606D", wraplength=600).grid(row=1, column=1, columnspan=3, sticky="w", pady=(5, 12))
         ttk.Label(options, text="方向").grid(row=2, column=0, sticky="w")
         self._control(ttk.Combobox(options, textvariable=self.direction, values=list(DIRECTIONS), state="readonly", width=14)).grid(row=2, column=1, sticky="w")
         ttk.Label(options, text="题数").grid(row=2, column=2, padx=(16, 10))
@@ -81,7 +84,7 @@ class VocabularyApp(tk.Tk):
         actions = ttk.Frame(frame)
         actions.pack(fill="x", pady=(18, 12))
         actions.columnconfigure((0, 1), weight=1)
-        self._control(ttk.Button(actions, text="生成 Excel 词库和默写表", command=lambda: self.start_generation("excel"))).grid(row=0, column=0, sticky="ew", padx=(0, 8), ipady=10)
+        self._control(ttk.Button(actions, text="生成 Excel（含手动随机宏版）", command=lambda: self.start_generation("excel"))).grid(row=0, column=0, sticky="ew", padx=(0, 8), ipady=10)
         self._control(ttk.Button(actions, text="生成所选课程 Word 词库", command=lambda: self.start_generation("word"))).grid(row=0, column=1, sticky="ew", padx=(8, 0), ipady=10)
         self.progress = ttk.Progressbar(frame, mode="indeterminate")
         self.progress.pack(fill="x", pady=(0, 10))
@@ -92,6 +95,7 @@ class VocabularyApp(tk.Tk):
     def choose_data_file(self):
         selected = filedialog.askopenfilename(title="选择词库 JSON", initialdir=str(default_data_file().parent), filetypes=[("JSON 文件", "*.json"), ("所有文件", "*.*")])
         if selected:
+            self.lessons.set("全部")
             self.data_path.set(selected)
 
     def choose_output_folder(self):
@@ -116,7 +120,7 @@ class VocabularyApp(tk.Tk):
         source = Path(self.data_path.get().strip()).expanduser()
         if not source.is_file():
             raise ValueError("请选择有效的词库 JSON 文件。")
-        records = load_vocabulary(source)
+        records, _ = load_dataset(source)
         lessons = parse_lessons(self.lessons.get(), (r["lesson"] for r in records))
         selected = filter_records(records, lessons)
         return source, records, selected, lessons
@@ -124,12 +128,20 @@ class VocabularyApp(tk.Tk):
     def _update_preview(self):
         self.preview_job = None
         try:
-            _, records, selected, _ = self._read_selection()
+            source = Path(self.data_path.get().strip()).expanduser()
+            records, metadata = load_dataset(source)
+            units = sorted({r["lesson"] for r in records})
+            self.unit_picker.configure(values=["全部", *units])
+            self.unit_label.set(metadata["unit_label"])
+            display = f"{units[0]}～{units[-1]}" if units == list(range(units[0], units[-1]+1)) else ",".join(map(str, units))
+            self.available_units.set(f"词库可选{metadata['unit_label']}：{display}；也可输入多个编号或范围。")
+            lessons = parse_lessons(self.lessons.get(), units)
+            selected = filter_records(records, lessons)
             count = parse_count(self.amount.get())
             available = sum(bool(r["chinese"].strip()) for r in selected)
             actual = available if count is None else min(count, available)
             courses = len({r["lesson"] for r in selected})
-            self.preview.set(f"已选 {courses} 课，共 {len(selected)} 条词条，可用 {available} 题；本次将生成 {actual} 题。" + (" 题数不足时按实际数量生成。" if count is not None and count > available else ""))
+            self.preview.set(f"{metadata['title']}：已选 {courses} 个{metadata['unit_label']}，共 {len(selected)} 条词条，可用 {available} 题；本次将生成 {actual} 题。" + (" 题数不足时按实际数量生成。" if count is not None and count > available else ""))
         except (OSError, UnicodeError, ValueError) as error:
             self.preview.set(str(error))
 
@@ -161,7 +173,8 @@ class VocabularyApp(tk.Tk):
             if kind == "excel":
                 paths = build_workbooks(source, destination, lessons=lessons, count=count, direction=direction)
             else:
-                paths = (export_word(source, destination / "大家的日语Ⅰ词库.docx", lessons=lessons),)
+                _, metadata = load_dataset(source)
+                paths = (export_word(source, destination / f"{metadata['title']}词库.docx", lessons=lessons),)
             self.results.put((True, (paths, destination)))
         except Exception as error:
             self.results.put((False, str(error)))
