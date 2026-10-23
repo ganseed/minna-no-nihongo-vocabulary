@@ -1,4 +1,4 @@
-name: Publish macOS release
+name: Publish Windows and macOS release
 
 on:
   workflow_dispatch:
@@ -7,20 +7,34 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  windows:
+    needs: test
+    uses: ./.github/workflows/build-windows.yml
+
+  macos:
+    needs: test
     uses: ./.github/workflows/build-macos.yml
 
   publish:
-    needs: build
+    needs: [windows, macos]
     runs-on: ubuntu-latest
     steps:
-      - name: Download verified macOS package
+      - name: Download verified Windows and macOS packages
         uses: actions/download-artifact@v4
         with:
-          name: minna-no-nihongo-vocabulary-macos
+          pattern: minna-no-nihongo-vocabulary-*
           path: release-assets
+          merge-multiple: true
 
-      - name: Publish GitHub Release
+      - name: Verify both packages exist
+        run: |
+          test -f release-assets/minna-no-nihongo-vocabulary-Windows.zip
+          test -f release-assets/minna-no-nihongo-vocabulary-macOS.zip
+
+      - name: Publish both platform packages to Release 1.1
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "1.1"
@@ -29,13 +43,18 @@ jobs:
             ## 修复内容
 
             - 修复 macOS 应用在 Gatekeeper App Translocation 路径下无法写入输出文件的问题。
-            - 将词库和宏版 Excel 模板显式打包进 .app/Contents/Resources，避免出现“缺少宏模板”。
-            - 增加应用搬移后的实际生成测试，验证普通版与宏版 Excel 均可生成。
+            - 将词库和宏版 Excel 模板显式打包进 macOS 应用，避免出现“缺少宏模板”。
+            - 增加 macOS 应用搬移后的实际生成测试。
+            - 同时提供 Windows 与 macOS 两个平台的安装包。
 
             ## 下载
 
-            下载 macOS ZIP，解压后运行「大家的日语词库工具.app」。
-          files: release-assets/minna-no-nihongo-vocabulary-macOS.zip
+            - Windows：下载 Windows ZIP 并解压运行。
+            - macOS：下载 macOS ZIP，解压后运行「大家的日语词库工具.app」。
+          files: |
+            release-assets/minna-no-nihongo-vocabulary-Windows.zip
+            release-assets/minna-no-nihongo-vocabulary-macOS.zip
+          overwrite_files: true
           draft: false
           prerelease: false
           make_latest: true
