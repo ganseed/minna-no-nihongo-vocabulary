@@ -6,11 +6,11 @@
 
 ## 下载与使用
 
-从 [最新版本](https://github.com/ganseed/minna-no-nihongo-vocabulary/releases/latest) 下载 Windows 64位或 Mac（Apple Silicon／M系列）压缩包，完整解压后打开“大家的日语词库工具”。请保留包内目录结构。
+从 [最新版本](https://github.com/ganseed/minna-no-nihongo-vocabulary/releases/latest) 下载 Windows 64位或 Mac（Apple Silicon／M系列）压缩包，完整解压后打开“大家的日语词库工具”。Windows 请保留包内目录结构。Mac 应用内置词库和宏模板，也可单独移动到“应用程序”；选择其他 JSON 可使用自己的词库。
 
 1. 选择词库、课程、默写方向和题数。
 2. 课程支持单课 `3`、多课 `1,3,5`、范围 `1-5` 或 `全部`；题数支持正整数或 `全部`。
-3. 生成 Excel 或 Word，文件默认保存在 `output` 文件夹。
+3. 生成 Excel 或 Word。Mac 应用默认保存到 `~/Documents/日语词库/output`，Windows 和源码运行默认保存在项目的 `output` 文件夹；也可自行选择位置。
 
 每次生成重新随机，同一份试卷内不重复抽题；题数不足时按实际数量生成。答案在作答栏右侧，少题无多余空框，多题保留边框。同名输出会被覆盖，生成前请关闭已打开的文件。
 

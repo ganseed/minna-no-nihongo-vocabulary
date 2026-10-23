@@ -31,7 +31,10 @@ jobs:
       - name: Test bundled application generation
         run: |
           package="dist/macos/大家的日语词库-macOS"
-          "$package/大家的日语词库工具.app/Contents/MacOS/大家的日语词库工具" --generate-excel-and-exit
+          standalone="$RUNNER_TEMP/vocabulary-standalone"
+          mkdir -p "$standalone"
+          ditto "$package/大家的日语词库工具.app" "$standalone/大家的日语词库工具.app"
+          "$standalone/大家的日语词库工具.app/Contents/MacOS/大家的日语词库工具" --generate-excel-and-exit --output "$package/output"
           python3 -c "from pathlib import Path; from openpyxl import load_workbook; p=Path('$package')/'output'/'大家的日语Ⅰ默写.xlsx'; assert p.is_file(), 'Bundled generation failed'; assert load_workbook(p)['默写'].max_row == 21, 'Unexpected blank question rows'"
 
       - name: Verify release contents

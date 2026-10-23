@@ -28,10 +28,27 @@ def project_root() -> Path:
     return executable.parent
 
 
+def resource_file(relative: str) -> Path:
+    # 优先保留包外词库的可编辑性；转位或单独移动 app 时回退到内置资源。
+    roots = [project_root()]
+    if getattr(sys, "frozen", False):
+        bundled = getattr(sys, "_MEIPASS", None)
+        if bundled:
+            roots.append(Path(bundled))
+        roots.append(Path(sys.executable).resolve().parent.parent / "Resources")
+    return next((root / relative for root in roots if (root / relative).is_file()), roots[0] / relative)
+
+
+def default_output_dir() -> Path:
+    if getattr(sys, "frozen", False) and sys.platform == "darwin":
+        return Path.home() / "Documents" / "日语词库" / "output"
+    return project_root() / "output"
+
+
 PROJECT_ROOT = project_root()
-DATA_FILE = PROJECT_ROOT / "data" / "vocabulary.json"
-OUTPUT_DIR = PROJECT_ROOT / "output"
-MACRO_TEMPLATE = PROJECT_ROOT / "template" / "默写宏模板.xlsm"
+DATA_FILE = resource_file("data/vocabulary.json")
+OUTPUT_DIR = default_output_dir()
+MACRO_TEMPLATE = resource_file("template/默写宏模板.xlsm")
 THIN = Side(style="thin", color="B8C4CE")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 HEADER_FILL = PatternFill("solid", fgColor="375A7F")

@@ -56,6 +56,24 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(wb["Lesson03"]["B2"].font.name, "SimHei")
         wb.close()
 
+    def test_mac_translocation_uses_documents_and_embedded_resources(self):
+        from unittest.mock import patch
+        from scripts import excel_builder as builder
+        bundle = self.root / "AppTranslocation" / "App.app" / "Contents" / "MacOS" / "tool"
+        embedded = self.root / "embedded"
+        (embedded / "data").mkdir(parents=True)
+        (embedded / "template").mkdir()
+        (embedded / "data" / "vocabulary.json").write_text("[]", encoding="utf-8")
+        (embedded / "template" / "默写宏模板.xlsm").write_bytes(b"template")
+        with patch.object(builder.sys, "frozen", True, create=True), patch.object(builder.sys, "platform", "darwin"), patch.object(builder.sys, "executable", str(bundle)), patch.object(builder.sys, "_MEIPASS", str(embedded), create=True), patch.object(builder.Path, "home", return_value=self.root):
+            self.assertEqual(builder.default_output_dir(), self.root / "Documents" / "日语词库" / "output")
+            self.assertEqual(builder.resource_file("data/vocabulary.json"), embedded / "data" / "vocabulary.json")
+            self.assertEqual(builder.resource_file("template/默写宏模板.xlsm"), embedded / "template" / "默写宏模板.xlsm")
+            external = bundle.parents[3] / "data" / "vocabulary.json"
+            external.parent.mkdir(parents=True)
+            external.write_text("[]", encoding="utf-8")
+            self.assertEqual(builder.resource_file("data/vocabulary.json"), external)
+
     def test_twenty_questions_means_twenty_rows_and_inline_answers(self):
         path = build_exam(records(250), self.root, count=20, seed=1)
         wb = load_workbook(path, data_only=True)

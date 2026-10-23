@@ -15,6 +15,8 @@ python3 -m pip install -r "$PROJECT_ROOT/requirements.txt" pyinstaller
 
 python3 -m PyInstaller --noconfirm --clean --windowed \
   --name "大家的日语词库工具" \
+  --add-data "$PROJECT_ROOT/data:data" \
+  --add-data "$PROJECT_ROOT/template:template" \
   --distpath "$PACKAGE_ROOT" \
   --workpath "$BUILD_ROOT" \
   --specpath "$BUILD_ROOT" \

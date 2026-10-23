@@ -1,5 +1,7 @@
 """Windows 和 macOS 共用的词库与默写工具。"""
 from __future__ import annotations
+import argparse
+import errno
 import queue
 import subprocess
 import sys
@@ -9,7 +11,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 
-from scripts.excel_builder import OUTPUT_DIR, build_workbooks
+from scripts.excel_builder import DATA_FILE, OUTPUT_DIR, build_workbooks
 from scripts.export_word import export_word
 from scripts.random_exam import DIRECTIONS, filter_records, load_dataset, parse_count, parse_lessons
 
@@ -34,7 +36,7 @@ def enable_high_dpi() -> None:
 
 
 def default_data_file() -> Path:
-    return OUTPUT_DIR.parent / "data" / "vocabulary.json"
+    return DATA_FILE
 
 
 def open_folder(path: Path) -> None:
@@ -296,7 +298,10 @@ class VocabularyApp(tk.Tk):
                 paths = (export_word(source, destination / f"{metadata['title']}词库.docx", lessons=lessons),)
             self.results.put((True, (paths, destination)))
         except Exception as error:
-            self.results.put((False, str(error)))
+            message = str(error)
+            if isinstance(error, OSError) and error.errno in {errno.EROFS, errno.EACCES, errno.EPERM}:
+                message = "保存位置无法写入，请选择“文稿”或“下载”等可写文件夹后重试。\n\n" + message
+            self.results.put((False, message))
 
     def _poll_results(self):
         try:
@@ -326,10 +331,13 @@ class VocabularyApp(tk.Tk):
 
 
 def main():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--output", type=Path, default=OUTPUT_DIR)
+    args, _ = parser.parse_known_args()
     if "--generate-excel-and-exit" in sys.argv:
-        build_workbooks(default_data_file(), OUTPUT_DIR)
+        build_workbooks(default_data_file(), args.output)
     elif "--generate-word-and-exit" in sys.argv:
-        export_word(default_data_file(), OUTPUT_DIR / "大家的日语Ⅰ词库.docx")
+        export_word(default_data_file(), args.output / "大家的日语Ⅰ词库.docx")
     else:
         VocabularyApp().mainloop()
 
