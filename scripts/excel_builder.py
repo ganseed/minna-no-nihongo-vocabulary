@@ -1,27 +1,27 @@
-"""使用公开的 openpyxl 从统一 JSON 数据源生成 Excel。"""
-
+"""从统一词库生成阅读词库、固定试卷和可重新随机出题的宏版。"""
 from __future__ import annotations
-
-import json
-import random
+import math
+import os
+import secrets
 import sys
 import tempfile
 import zipfile
+from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 
 import xlsxwriter
 from openpyxl import Workbook
-from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.utils import get_column_letter
+
+from scripts.random_exam import DIRECTIONS, filter_records, load_vocabulary, select_questions
 
 
 def project_root() -> Path:
-    """定位应用旁边的外部 data 目录。"""
     if not getattr(sys, "frozen", False):
         return Path(__file__).resolve().parents[1]
     executable = Path(sys.executable).resolve()
-    # macOS 应用位于发布目录/App.app/Contents/MacOS/，数据放在 App.app 旁边。
     if sys.platform == "darwin" and executable.parent.name == "MacOS":
         return executable.parents[3]
     return executable.parent
@@ -31,7 +31,6 @@ PROJECT_ROOT = project_root()
 DATA_FILE = PROJECT_ROOT / "data" / "vocabulary.json"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 MACRO_TEMPLATE = PROJECT_ROOT / "template" / "默写宏模板.xlsm"
-
 THIN = Side(style="thin", color="B8C4CE")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 HEADER_FILL = PatternFill("solid", fgColor="375A7F")
@@ -42,268 +41,252 @@ ALIGN = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
 
 def load_records(data_path: Path | None = None) -> list[dict]:
-    """读取并校验词库的必要字段。"""
-    source = Path(data_path) if data_path else DATA_FILE
-    records = json.loads(source.read_text(encoding="utf-8"))
-    if not isinstance(records, list) or not records:
-        raise ValueError("词库 JSON 必须是非空数组。")
-    required = {"id", "lesson", "order", "type", "japanese", "chinese"}
-    for index, record in enumerate(records, 1):
-        missing = required - record.keys()
-        if missing:
-            raise ValueError(f"第 {index} 条记录缺少字段：{', '.join(sorted(missing))}")
-    return records
+    return load_vocabulary(Path(data_path) if data_path else DATA_FILE)
 
 
-def style_range(ws, min_row: int, max_row: int, min_col: int, max_col: int) -> None:
-    """统一设置正文单元格样式。"""
+@contextmanager
+def atomic_output(path: Path):
+    """写完临时文件再替换，生成失败不破坏已有文件。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle, temporary = tempfile.mkstemp(prefix=".generating-", suffix=path.suffix, dir=path.parent)
+    os.close(handle)
+    temporary = Path(temporary)
+    try:
+        yield temporary
+        os.replace(temporary, path)
+    except PermissionError as error:
+        raise PermissionError(f"无法保存 {path.name}，请关闭正在打开的同名文件，或选择可写的输出文件夹。") from error
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def style_range(ws, min_row, max_row, min_col, max_col):
     for row in ws.iter_rows(min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col):
         for cell in row:
-            cell.font = BODY_FONT
-            cell.alignment = ALIGN
-            cell.border = BORDER
+            cell.font, cell.alignment, cell.border = BODY_FONT, ALIGN, BORDER
+            # 词库内容按原文显示，不能把以等号开头的词条解释为公式。
+            if isinstance(cell.value, str):
+                cell.data_type = "s"
 
 
-def style_header(ws, row: int, min_col: int, max_col: int, fill=HEADER_FILL) -> None:
-    """设置标题行样式。"""
+def style_header(ws, row, min_col, max_col, fill=HEADER_FILL):
     for cells in ws.iter_rows(min_row=row, max_row=row, min_col=min_col, max_col=max_col):
         for cell in cells:
-            cell.font = HEADER_FONT
-            cell.fill = fill
-            cell.alignment = ALIGN
-            cell.border = BORDER
+            cell.font, cell.fill, cell.alignment, cell.border = HEADER_FONT, fill, ALIGN, BORDER
 
 
-def prepare_workbook() -> Workbook:
+def prepare_workbook():
     wb = Workbook()
     wb.remove(wb.active)
-    try:
-        wb.calculation.fullCalcOnLoad = True
-        wb.calculation.forceFullCalc = True
-        wb.calculation.calcMode = "auto"
-    except AttributeError:
-        pass
     return wb
 
 
-def build_vocabulary(records: list[dict], output_dir: Path | None = None) -> Path:
-    """生成阅读词库和程序读取用 Vocabulary 工作表。"""
+def row_height(*values: str, minimum=36) -> float:
+    """中日文按宽字符估算行高，避免较长释义被截断。"""
+    lines = max(sum(max(1, math.ceil(sum(1 if ord(c) > 127 else .55 for c in line) / 27))
+                    for line in str(value).split("\n")) for value in values)
+    return max(minimum, lines * 15 + 6)
+
+
+def print_layout(ws, last_row, last_col):
+    ws.print_area = f"A1:{last_col}{last_row}"
+    ws.print_title_rows = "1:1"
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    ws.page_setup.orientation = "portrait"
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 0
+    ws.oddFooter.center.text = "第 &P 页 / 共 &N 页"
+
+
+def build_vocabulary(records, output_dir=None):
+    grouped = defaultdict(list)
+    for record in sorted(records, key=lambda r: (r["lesson"], r["order"])):
+        grouped[record["lesson"]].append(record)
+    if not grouped:
+        raise ValueError("所选课程没有词条。")
     wb = prepare_workbook()
-    max_lesson = max(int(record["lesson"]) for record in records)
-    for lesson in range(1, max_lesson + 1):
+    for lesson, items in sorted(grouped.items()):
         ws = wb.create_sheet(f"Lesson{lesson:02d}")
         ws.append(["日语", "中文"])
-        lesson_records = [record for record in records if int(record["lesson"]) == lesson]
-        regular = [record for record in lesson_records if record["type"] != "example"]
-        examples = [record for record in lesson_records if record["type"] == "example"]
-        for record in regular:
-            ws.append([record.get("japanese", ""), record.get("chinese", "")])
+        examples = [r for r in items if r["type"] == "example"]
+        for record in items:
+            if record["type"] != "example":
+                ws.append([record["japanese"], record["chinese"]])
+        example_row = None
         if examples:
             example_row = ws.max_row + 1
             ws.append(["【例句】", ""])
             for record in examples:
-                ws.append([record.get("japanese", ""), record.get("chinese", "")])
-            style_header(ws, example_row, 1, 2, EXAMPLE_FILL)
+                ws.append([record["japanese"], record["chinese"]])
         style_range(ws, 2, ws.max_row, 1, 2)
         style_header(ws, 1, 1, 2)
-        ws.column_dimensions["A"].width = 40
-        ws.column_dimensions["B"].width = 22
-        for row in range(1, ws.max_row + 1):
-            ws.row_dimensions[row].height = 38 if row > 1 else 28
+        if example_row:
+            style_header(ws, example_row, 1, 2, EXAMPLE_FILL)
+        ws.column_dimensions["A"].width, ws.column_dimensions["B"].width = 40, 40
+        for row in ws:
+            ws.row_dimensions[row[0].row].height = row_height(*(cell.value or "" for cell in row))
         ws.freeze_panes = "A2"
         ws.sheet_view.showGridLines = False
-
+        print_layout(ws, ws.max_row, "B")
     ws = wb.create_sheet("Vocabulary")
-    headers = ["id", "lesson", "order", "type", "japanese", "kana", "kanji", "chinese", "remark"]
+    headers = ["id", "lesson", "order", "type", "japanese", "kana", "kanji", "chinese", "remark",
+               "part_of_speech", "pitch_accent", "dictionary_form"]
     ws.append(headers)
     for record in records:
         ws.append([record.get(key, "") for key in headers])
     style_range(ws, 2, ws.max_row, 1, len(headers))
     style_header(ws, 1, 1, len(headers))
-    widths = [16, 10, 10, 14, 34, 24, 24, 38, 18]
-    for index, width in enumerate(widths, 1):
-        ws.column_dimensions[chr(64 + index)].width = width
-    ws.freeze_panes = "A2"
+    for index, width in enumerate([16, 10, 10, 14, 40, 24, 24, 40, 24, 16, 16, 24], 1):
+        ws.column_dimensions[get_column_letter(index)].width = width
+    ws.freeze_panes = "E2"
+    ws.auto_filter.ref = ws.dimensions
     ws.sheet_view.showGridLines = False
-    destination = Path(output_dir) if output_dir else OUTPUT_DIR
-    destination.mkdir(parents=True, exist_ok=True)
-    path = destination / "大家的日语Ⅰ词库.xlsx"
-    wb.save(path)
+    path = Path(output_dir or OUTPUT_DIR) / "大家的日语Ⅰ词库.xlsx"
+    with atomic_output(path) as temporary:
+        wb.save(temporary)
     return path
 
 
-def build_exam(records: list[dict], output_dir: Path | None = None) -> Path:
-    """生成支持任意课程组合、方向和数量的默写工作簿。"""
-    eligible = [r for r in records if r.get("chinese")]
-    random.shuffle(eligible)
+def build_exam(records, output_dir=None, *, lessons=None, count=20, direction="zh_to_jp", seed=None):
+    """普通版是本次试卷快照，严格按实际题数建表，无空题占位。"""
+    questions = select_questions(records, lessons, count, direction, seed)
     wb = prepare_workbook()
-
-    settings = wb.create_sheet("设置")
-    rows = [
-        ["默写设置", "选择值"], ["方向", "中译日"], ["课程", "全部"], ["随机数量", 20],
-        ["刷新方式", "重新运行一键生成脚本"], ["随机种子", "每次生成自动刷新"],
-        ["可选方向", "日译中 / 中译日"], ["课程填写示例", "单课：3；多课：1,3,5；全部：全部"],
-        ["可选数量", "20 / 50 / 100 / 200 / 全部"],
-        ["题目范围", "所选课程的全部记录"],
-    ]
-    for row in rows:
-        settings.append(row)
-    style_range(settings, 2, len(rows), 1, 2)
+    for name, headers in [("默写", ["序号", "题目", "作答"]), ("答案", ["序号", "题目", "答案"])]:
+        ws = wb.create_sheet(name)
+        ws.append(headers)
+        for q in questions:
+            ws.append([q["number"], q["question"], "" if name == "默写" else q["answer"]])
+            ws.row_dimensions[ws.max_row].height = row_height(q["question"], q["answer"])
+        style_range(ws, 2, ws.max_row, 1, 3)
+        style_header(ws, 1, 1, 3)
+        for col, width in {"A": 9, "B": 48, "C": 38}.items():
+            ws.column_dimensions[col].width = width
+        ws.freeze_panes = "B2"
+        ws.sheet_view.showGridLines = False
+        print_layout(ws, ws.max_row, "C")
+    settings = wb.create_sheet("本次设置")
+    label = next(k for k, v in DIRECTIONS.items() if v == direction)
+    for values in [["本次试卷", "内容"], ["方向", label],
+                   ["课程", "全部" if lessons is None else ",".join(map(str, lessons))],
+                   ["实际题数", len(questions)],
+                   ["更换课程或重新出题", "回到桌面工具重新生成；也可使用宏版的“设置”工作表。"],
+                   ["打印提示", "打印“默写”工作表；答案在独立的“答案”工作表。"]]:
+        settings.append(values)
+    style_range(settings, 2, settings.max_row, 1, 2)
     style_header(settings, 1, 1, 2)
-    settings.column_dimensions["A"].width = 24
-    settings.column_dimensions["B"].width = 48
-    direction = DataValidation(type="list", formula1='"日译中,中译日"')
-    amount = DataValidation(type="list", formula1='"20,50,100,200,全部"')
-    settings.add_data_validation(direction)
-    settings.add_data_validation(amount)
-    direction.add(settings["B2"])
-    amount.add(settings["B4"])
+    settings.column_dimensions["A"].width, settings.column_dimensions["B"].width = 25, 65
+    for row in range(2, settings.max_row + 1):
+        settings.row_dimensions[row].height = 36
     settings.sheet_view.showGridLines = False
-
-    source = wb.create_sheet("题库")
-    source.append(["lesson", "japanese", "chinese", "type", "id"])
-    for r in eligible:
-        source.append([r["lesson"], r["japanese"], r["chinese"], r["type"], r["id"]])
-    style_range(source, 2, source.max_row, 1, 5)
-    style_header(source, 1, 1, 5)
-    source.freeze_panes = "A2"
-    source.sheet_view.showGridLines = False
-
-    groups = wb.create_sheet("随机题组")
-    groups.append(["lesson", "japanese", "chinese", "selected", "selected_order"])
-    for r in eligible:
-        groups.append([r["lesson"], r["japanese"], r["chinese"], "", ""])
-    last_row = groups.max_row
-    normalized = 'SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(\'设置\'!$B$3,"，",","),"、",",")," ","")'
-    for row in range(2, last_row + 1):
-        groups.cell(row, 4, f'=IF(\'设置\'!$B$3="全部",1,--ISNUMBER(SEARCH(","&A{row}&",",","&{normalized}&",")))')
-        groups.cell(row, 5, f'=IF(D{row}=1,COUNTIF($D$2:D{row},1),"")')
-    style_range(groups, 2, last_row, 1, 5)
-    style_header(groups, 1, 1, 5)
-    groups.sheet_state = "hidden"
-
-    exam = wb.create_sheet("默写")
-    exam.append(["序号", "题目", "作答", "答案"])
-    limit = f'IF(\'设置\'!$B$4="全部",{len(eligible)},\'设置\'!$B$4)'
-    for number in range(1, len(eligible) + 1):
-        row = number + 1
-        source_row = f'IFERROR(MATCH(A{row},\'随机题组\'!$E$2:$E${last_row},0),"")'
-        question = f'=IF(OR(A{row}>{limit},{source_row}=""),"",INDEX(\'随机题组\'!$B$2:$C${last_row},{source_row},IF(\'设置\'!$B$2="日译中",1,2)))'
-        answer = f'=IF(OR(A{row}>{limit},{source_row}=""),"",INDEX(\'随机题组\'!$B$2:$C${last_row},{source_row},IF(\'设置\'!$B$2="日译中",2,1)))'
-        exam.append([number, question, "", answer])
-    style_range(exam, 2, exam.max_row, 1, 4)
-    style_header(exam, 1, 1, 4)
-    for column, width in {"A": 9, "B": 40, "C": 30, "D": 34}.items():
-        exam.column_dimensions[column].width = width
-    for row in range(1, exam.max_row + 1):
-        exam.row_dimensions[row].height = 36
-    exam.freeze_panes = "A2"
-    exam.sheet_view.showGridLines = False
-    destination = Path(output_dir) if output_dir else OUTPUT_DIR
-    destination.mkdir(parents=True, exist_ok=True)
-    path = destination / "大家的日语Ⅰ默写.xlsx"
-    wb.save(path)
+    path = Path(output_dir or OUTPUT_DIR) / "大家的日语Ⅰ默写.xlsx"
+    with atomic_output(path) as temporary:
+        wb.save(temporary)
     return path
 
 
-def build_macro_exam(records: list[dict], output_dir: Path | None = None) -> Path:
-    """使用内置 VBA 创建跨平台可生成的宏版默写工作簿。"""
+def build_macro_exam(records, output_dir=None, *, lessons=None, count=20, direction="zh_to_jp", seed=None):
+    """保持现有 VBA；用条件边框及动态打印范围适配多题和少题。"""
     if not MACRO_TEMPLATE.is_file():
         raise FileNotFoundError(f"缺少宏模板：{MACRO_TEMPLATE}")
-
-    destination = Path(output_dir) if output_dir else OUTPUT_DIR
-    destination.mkdir(parents=True, exist_ok=True)
-    path = destination / "大家的日语Ⅰ默写-宏版.xlsm"
-    eligible = [record for record in records if record.get("chinese")]
-    random.shuffle(eligible)
-
+    questions = select_questions(records, lessons, count, direction, seed)
+    eligible = [r for r in records if r["chinese"].strip()]
+    path = Path(output_dir or OUTPUT_DIR) / "大家的日语Ⅰ默写-宏版.xlsm"
     with zipfile.ZipFile(MACRO_TEMPLATE) as archive:
         vba_project = archive.read("xl/vbaProject.bin")
-
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with atomic_output(path) as temporary, tempfile.TemporaryDirectory() as temp_dir:
         vba_path = Path(temp_dir) / "vbaProject.bin"
         vba_path.write_bytes(vba_project)
-        workbook = xlsxwriter.Workbook(path)
-        workbook.add_vba_project(vba_path)
-        header = workbook.add_format({
-            "font_name": "Yu Gothic", "font_size": 11, "bold": True,
-            "font_color": "#FFFFFF", "bg_color": "#375A7F",
-            "border": 1, "align": "center", "valign": "vcenter",
-        })
-        body = workbook.add_format({
-            "font_name": "Yu Gothic", "font_size": 11, "font_color": "#172B3A",
-            "border": 1, "align": "center", "valign": "vcenter", "text_wrap": True,
-        })
-
-        settings = workbook.add_worksheet("设置")
-        settings.hide_gridlines(2)
-        settings.set_column("A:A", 24)
-        settings.set_column("B:B", 48)
-        settings_rows = [
-            ["默写设置", "选择值"], ["方向", "中译日"], ["课程", "全部"], ["随机数量", 20],
-            ["使用方式", "设置完成后点击右侧“随机生成”"],
-            ["随机规则", "每次点击都会重新打乱"],
-            ["可选方向", "日译中 / 中译日"],
-            ["课程填写示例", "单课：3；多课：1,3,5；全部：全部"],
-            ["可选数量", "20 / 50 / 100 / 200 / 全部"],
-            ["题目范围", "所选课程的全部记录"],
-        ]
-        for row, values in enumerate(settings_rows):
-            settings.write_row(row, 0, values, header if row == 0 else body)
-        settings.data_validation("B2", {"validate": "list", "source": ["日译中", "中译日"]})
-        settings.data_validation("B4", {"validate": "list", "source": [20, 50, 100, 200, "全部"]})
-        settings.insert_button("D2", {
-            "macro": "RegenerateExam", "caption": "随机生成",
-            "width": 150, "height": 42,
-        })
-
-        source = workbook.add_worksheet("题库")
-        source.hide_gridlines(2)
-        source.freeze_panes(1, 0)
-        source.set_column("A:A", 10)
-        source.set_column("B:C", 36)
-        source.set_column("D:E", 16)
-        source.write_row(0, 0, ["lesson", "japanese", "chinese", "type", "id"], header)
-        for row, record in enumerate(eligible, 1):
-            source.write_row(row, 0, [
-                record["lesson"], record["japanese"], record["chinese"],
-                record["type"], record["id"],
-            ], body)
-
-        exam = workbook.add_worksheet("默写")
-        exam.hide_gridlines(2)
-        exam.freeze_panes(1, 0)
-        exam.set_column("A:A", 9)
-        exam.set_column("B:B", 40)
-        exam.set_column("C:C", 30)
-        exam.set_column("D:D", 34)
-        exam.write_row(0, 0, ["序号", "题目", "作答", "答案"], header)
-        # 预先为全部可用题目行设置统一边框，宏写入更多题目后样式仍然完整。
-        for row in range(1, len(eligible) + 1):
-            exam.set_row(row, 36)
-            exam.write_blank(row, 0, None, body)
-            exam.write_blank(row, 1, None, body)
-            exam.write_blank(row, 2, None, body)
-            exam.write_blank(row, 3, None, body)
-        for row, record in enumerate(eligible[:20], 1):
-            exam.write_row(row, 0, [row, record["chinese"], "", record["japanese"]], body)
-        workbook.close()
+        with xlsxwriter.Workbook(temporary, {"strings_to_formulas": False, "strings_to_urls": False}) as wb:
+            wb.add_vba_project(vba_path)
+            basic = {"font_name": "Yu Gothic", "font_size": 11, "font_color": "#172B3A",
+                     "align": "center", "valign": "vcenter", "text_wrap": True}
+            body = wb.add_format(basic)
+            header = wb.add_format({**basic, "bold": True, "font_color": "#FFFFFF",
+                                    "bg_color": "#375A7F", "border": 1})
+            borders = wb.add_format({"border": 1, "border_color": "#B8C4CE"})
+            settings = wb.add_worksheet("设置")
+            source = wb.add_worksheet("题库")
+            exam = wb.add_worksheet("默写")
+            answers = wb.add_worksheet("答案")
+            for sheet in (settings, source, exam, answers):
+                sheet.hide_gridlines(2)
+            settings.set_column("A:A", 24, body)
+            settings.set_column("B:B", 60, body)
+            settings.set_default_row(32)
+            label = next(k for k, v in DIRECTIONS.items() if v == direction)
+            settings_rows = [["默写设置", "选择值"], ["方向", label],
+                ["课程", "全部" if lessons is None else ",".join(map(str, lessons))],
+                ["随机数量", "全部" if count is None else count],
+                ["使用方式", "修改设置后点击右侧“随机生成”；查看题目请切换到“默写”。"],
+                ["打印提示", "默写与答案分别打印，范围随实际题数变化。"],
+                ["课程填写示例", "单课：3；多课：1,3,5；全部：全部（此处不支持范围写法）"],
+                ["实际题数", ""], ["题库范围", f"保留全部 {len(eligible)} 条可用题目，可继续更换课程。"]]
+            for row, values in enumerate(settings_rows):
+                settings.write_row(row, 0, values, header if row == 0 else body)
+            settings.write_formula("B8", "=COUNTA('默写'!A:A)-1", body, len(questions))
+            settings.data_validation("B2", {"validate": "list", "source": list(DIRECTIONS), "error_type": "stop", "error_message": "请选择中译日或日译中。", "ignore_blank": False})
+            settings.data_validation("B4", {"validate": "list", "source": [20, 50, 100, 200, "全部"], "error_type": "stop", "error_message": "请选择列表中的题数。", "ignore_blank": False})
+            settings.insert_button("D2", {"macro": "RegenerateExam", "caption": "随机生成", "width": 150, "height": 42})
+            source.write_row(0, 0, ["lesson", "japanese", "chinese", "type", "id"], header)
+            for row, record in enumerate(eligible, 1):
+                source.write_row(row, 0, [record[k] for k in ["lesson", "japanese", "chinese", "type", "id"]], body)
+            source.hide()
+            for sheet in (exam, answers):
+                sheet.set_column("A:A", 9, body)
+                sheet.set_column("B:B", 48, body)
+                sheet.set_column("C:C", 38, body)
+                sheet.set_default_row(36)
+                sheet.freeze_panes(1, 1)
+                sheet.repeat_rows(0)
+                sheet.set_paper(9)
+                sheet.fit_to_pages(1, 0)
+                sheet.set_footer("&C第 &P 页 / 共 &N 页")
+                # 条件格式覆盖整个可用题数，但不创建占位单元格。
+                # VBA 清除旧题后，旧边框随 A 列变空自动消失；增题时自动补齐。
+                sheet.conditional_format(1, 0, len(eligible), 2,
+                    {"type": "formula", "criteria": '$A2<>""', "format": borders})
+            exam.set_column("D:D", 38, body, {"hidden": True})
+            exam.write_row(0, 0, ["序号", "题目", "作答", "答案（见答案页）"], header)
+            answers.write_row(0, 0, ["序号", "题目", "答案"], header)
+            for row, q in enumerate(questions, 1):
+                exam.write_row(row, 0, [row, q["question"], "", q["answer"]], body)
+            # 预留答案公式不带固定边框；未出题的行显示空白，且不进入打印区域。
+            for row in range(1, len(eligible) + 1):
+                q = questions[row - 1] if row <= len(questions) else None
+                for col, source_col, cached in [(0, "A", row if q else ""),
+                    (1, "B", q["question"] if q else ""), (2, "D", q["answer"] if q else "")]:
+                    answers.write_formula(row, col, f'=IF(\'默写\'!A{row+1}="","",\'默写\'!{source_col}{row+1})', body, cached)
+            # Excel 原生动态打印区域：题数由 VBA 写入的 A 列决定，不受历史最多题数影响。
+            for name in ("默写", "答案"):
+                wb.define_name(f"'{name}'!_xlnm.Print_Area",
+                    f"='{name}'!$A$1:INDEX('{name}'!$C:$C,MAX(2,COUNTA('默写'!$A:$A)))")
+            exam.activate()
     return path
 
 
-def build_workbooks(
-    data_path: Path | None = None,
-    output_dir: Path | None = None,
-) -> tuple[Path, Path, Path]:
-    """从 JSON 生成词库、普通默写和宏版默写三个 Excel 文件。"""
-    destination = Path(output_dir) if output_dir else OUTPUT_DIR
-    destination.mkdir(parents=True, exist_ok=True)
+def build_workbooks(data_path=None, output_dir=None, *, lessons=None, count=20, direction="zh_to_jp", seed=None):
     records = load_records(data_path)
-    vocabulary_path = build_vocabulary(records, destination)
-    exam_path = build_exam(records, destination)
-    macro_exam_path = build_macro_exam(records, destination)
-    print(f"已生成 {len(records)} 条记录，输出目录：{destination}")
-    return vocabulary_path, exam_path, macro_exam_path
+    selected = filter_records(records, lessons)
+    # 一次生成中的普通版和宏版初始试卷保持一致；下次点击仍重新随机。
+    seed = secrets.randbits(64) if seed is None else seed
+    # 出题设置错误时，在写任何文件前立即提示。
+    select_questions(records, lessons, count, direction, seed)
+    destination = Path(output_dir or OUTPUT_DIR)
+    destination.mkdir(parents=True, exist_ok=True)
+    # 先完成全部生成，再替换正式输出，避免中途生成失败留下半套新文件。
+    with tempfile.TemporaryDirectory(prefix=".generation-", dir=destination) as stage:
+        stage = Path(stage)
+        paths = (build_vocabulary(selected, stage),
+                 build_exam(records, stage, lessons=lessons, count=count, direction=direction, seed=seed),
+                 build_macro_exam(records, stage, lessons=lessons, count=count, direction=direction, seed=seed))
+        result = []
+        for source in paths:
+            target = destination / source.name
+            with atomic_output(target) as temporary:
+                temporary.write_bytes(source.read_bytes())
+            result.append(target)
+    print(f"已生成 {len(selected)} 条词条的阅读词库和本次默写，输出目录：{destination}")
+    return tuple(result)
 
 
 if __name__ == "__main__":

@@ -1,241 +1,103 @@
-# 大家的日本语 单词
+# 大家的日语词库与随机默写
 
-自用默写模板
+用于《大家的日语》初级Ⅰ、Ⅱ（第1～50课）的阅读、默写和词库维护，支持 Windows 和 macOS。
 
-0代码能力，所有内容均AI生成
+## 下载和使用
 
-《大家的日语 初级 I》词库，并生成阅读词库、随机默写工作簿和 Word 文档。
+到 [Releases](https://github.com/ganseed/minna-no-nihongo-vocabulary/releases/latest) 下载适合平台的 ZIP，**完整解压**后双击“大家的日语词库工具”。保留应用、`data`、`template` 和 `output` 的目录关系。
 
-当前词库包含 Lesson 01～50。
+1. 启动时自动选择发布包内置词库，也可选择其他兼容 JSON。
+2. 填写课程：单课 `3`，多课 `1,3,5`，连续课程 `1-5`，或 `全部`。
+3. 选择中译日／日译中、题数和输出文件夹。生成前会显示可用题数和实际生成题数。
+4. 点击“生成 Excel 词库和默写表”或“生成所选课程 Word 词库”。
 
-## 主要功能
+题数可以填正整数或“全部”。如果所选课程只有60题，即使请求200题，也只生成60题，不补空题。
 
-- 按课生成词库 Excel
-- 默认使用“中译日”默写
-- 支持单课、多课或全部课程
-- 支持 20、50、100、200 题或所选课程全部题目
-- 题目范围包含所选课程中所有带中文内容的记录
-- 宏版 Excel 可在工作簿内点击“随机生成”重新洗牌
-- 导出可编辑的 Word 词库
-- 桌面工具可选择内置或其他兼容的 JSON 文件
-- Word 与 Excel 使用独立生成按钮
-- 支持 Windows 和 macOS
-- 不包含 PDF 导出功能
+## 生成结果
 
-## 直接使用宏版默写
+| 文件 | 用途 |
+| --- | --- |
+| 大家的日语Ⅰ词库.xlsx | 所选课程的阅读词库，只创建实际有词条的课程页 |
+| 大家的日语Ⅰ默写.xlsx | 本次试卷快照，严格按实际题数生成，答案在独立工作表 |
+| 大家的日语Ⅰ默写-宏版.xlsm | 在 Microsoft Excel 中更改设置并反复随机出题 |
+| 大家的日语Ⅰ词库.docx | 所选课程的可编辑 Word 词库，单独生成 |
 
-打开：
+普通版换课程、换方向或重新随机时，请回到桌面工具重新生成。它不需要启用宏。
 
-```text
-output/大家的日语Ⅰ默写-宏版.xlsm
-```
+已有同名文件会在成功生成后替换；如果文件正被 Excel 或 Word 打开，请先关闭再生成。
 
-首次打开时，请在 Microsoft Excel 中点击“启用内容”或“启用宏”。
+## 宏版默写
 
-在“设置”工作表中设置：
+打开宏版，在 Microsoft Excel 提示时按需启用宏。在“设置”工作表中填写：
 
-| 单元格 | 功能 | 填写示例 |
-| --- | --- | --- |
-| B2 | 默写方向 | `中译日` 或 `日译中` |
-| B3 | 课程范围 | 单课 `3`；多课 `1,3,5`；全部课程 `全部` |
-| B4 | 题目数量 | `20`、`50`、`100`、`200` 或 `全部` |
+| 单元格 | 内容 |
+| --- | --- |
+| B2 | 中译日／日译中 |
+| B3 | 单课 `3`，多课 `1,3,5` 或 `全部` |
+| B4 | 20、50、100、200 或 全部 |
+| B8 | 实际题数，自动更新 |
 
-默认设置为“中译日、全部课程、20 题”。
+点击“随机生成”，再查看“默写”页。每次点击会重新洗牌，并清空上一份试卷的作答。
 
-设置完成后点击“随机生成”。每点击一次都会重新打乱题目，不使用固定随机种子。生成结果位于“默写”工作表，包含题目、作答栏和答案。
+**宏版工作簿内的课程输入不支持 `1-5`，请写成 `1,2,3,4,5`。** 桌面工具支持范围，并会展开成宏版能识别的课次。
 
-### 宏版兼容性
+- 少题时不显示多余空框，多题时自动补齐边框。表格显示依赖条件格式，请勿删除条件格式规则。
+- “默写”页用于作答，“答案”页用于核对。默写页的D列答案默认隐藏。
+- 两页分别设置动态打印范围，按实际题数打印。请打印当前“默写”页或“答案”页。
+- 宏版保留全词库题目，方便继续切换其他课程；后台“题库”页默认隐藏。
 
-- Windows Excel：支持
-- Mac Excel：支持，首次打开时需要允许宏
-- Microsoft 365：支持
-- WPS：宏支持因版本而异，不保证按钮可用
+宏功能需要支持 VBA 的 Microsoft Excel。WPS 的宏支持因版本而异。
 
-如果 Windows 提示文件来自网络并阻止宏，请关闭工作簿，在文件上右键选择“属性”，勾选“解除锁定”，然后重新打开并启用宏。
+## 词库维护
 
-## 从 GitHub 下载
+统一数据源为 `data/vocabulary.json`。修改后重新生成即可，不需要重新编译应用。支持 UTF-8 和带 BOM 的 UTF-8。
 
-可以使用 Git：
+必要字段：`id`（唯一编号）、`lesson`（正整数课次）、`order`（正整数顺序）、`type`、`japanese`、`chinese`。
 
-```bash
-git clone <你的 GitHub 仓库地址>
-cd minna-no-nihongo-vocabulary
-```
+可选字段：`kana`、`kanji`、`remark`、`part_of_speech`、`pitch_accent`、`dictionary_form`。生成的 `Vocabulary` 工作表保留这些字段。
 
-也可以在 GitHub 页面选择 `Code` → `Download ZIP`，解压后进入项目目录。
+全部有非空中文释义的记录均可抽题。抽题不重复；“全部”会将所选课程的可用题目全部打乱。
 
-如果只需要默写，可以直接使用仓库中的宏版工作簿，不需要安装 Python。
+声调沿用现有词库标法，例如 `24` 表示②、④两种，`01` 表示⓪、①两种。动词的声调多数按辞书形记录，不能直接套用到ます形。本词库为自用学习资料，未核验的声调仍应结合词典确认。
 
-## 桌面工具
+## 从源码运行
 
-Windows 和 macOS 发布包使用相同界面，提供：
+需要 Python 3.12 或更高版本：
 
-- “选择 JSON 文件”：软件启动时不预选文件，可选择发布包内的 `data/vocabulary.json` 或其他兼容词库
-- “生成 Excel 词库 + 默写模板（含宏版）”：一次生成阅读词库、普通默写和宏版默写
-- “生成 Word 词库”：单独生成可编辑 Word 文档
-- “打开输出文件夹”：查看生成结果
-
-两个平台的发布包结构一致：
-
-```text
-大家的日语词库-Windows/ 或 大家的日语词库-macOS/
-├── 大家的日语词库工具.exe 或 大家的日语词库工具.app
-├── data/
-│   └── vocabulary.json
-├── template/
-│   └── 默写宏模板.xlsm
-├── output/
-```
-
-应用、`data` 和 `output` 应保持在同一个发布目录中。macOS 包已经自带默认 `data/vocabulary.json`，不需要手动复制。
-
-## 使用源码生成文件
-
-需要 Python 3.12 或更高版本。
-
-Windows：
-
-```powershell
+```sh
 python -m pip install -r requirements.txt
-python main.py excel
+python desktop_app.py
 ```
 
-macOS：
+命令行示例：
 
-```bash
-python3 -m pip install -r requirements.txt
-python3 main.py excel
+```sh
+python main.py excel --lessons "3" --count 20
+python main.py excel --lessons "1,3,5" --count 全部 --direction 日译中
+python main.py all --lessons "1-5" --output "./output"
+python main.py word --lessons "8"
+python main.py excel --data "./data/vocabulary.json" --seed 42
 ```
 
-也可以指定其他 JSON 和输出目录：
+macOS 可将 `python` 替换为 `python3`。`--seed` 只用于需要复现同一份试卷时，默认每次随机。
 
-```powershell
-python main.py excel --data "D:/词库/其他词库.json" --output "D:/词库/生成结果"
-python main.py word --data "D:/词库/其他词库.json" --output "D:/词库/生成结果"
+## 开发和发布
+
+运行测试：
+
+```sh
+python -m unittest discover -s tests -v
 ```
 
-生成结果位于 `output/`：
+测试覆盖实际文件生成、20→200→20题、题数不足、课程筛选、宏版条件边框、动态打印范围、VBA项目保留、Word首屏和词库校验。
 
-- `大家的日语Ⅰ词库.xlsx`
-- `大家的日语Ⅰ默写.xlsx`
-- `大家的日语Ⅰ默写-宏版.xlsm`
+本机构建：
 
-普通 `.xlsx` 不含宏。宏版会使用当前选择的 JSON 同步生成，打开后可直接点击“随机生成”。
+- Windows：`./build_windows_app.ps1`
+- macOS：`./build_macos_app.sh`
 
-## 导出 Word
+GitHub Actions 提供独立的 Windows、macOS 构建，以及双平台测试。推送 `v*` 标签后，发布工作流先测试，再构建两个平台，并运行打包后生成检查；两个包都成功后，才创建包含双平台 ZIP 的 GitHub Release。发布说明取自 `RELEASE_NOTES.md`。
 
-Windows：
+打包检查验证应用能独立读取外置词库和宏模板、生成默认20题试卷。自动构建不启动 Microsoft Excel 实际执行 VBA。
 
-```powershell
-python main.py word
-```
-
-macOS：
-
-```bash
-python3 main.py word
-```
-
-生成结果：
-
-```text
-output/大家的日语Ⅰ词库.docx
-```
-
-同时生成 Excel 和 Word：
-
-```powershell
-python main.py all
-```
-
-## 修改词库
-
-长期维护时只需编辑：
-
-```text
-data/vocabulary.json
-```
-
-建议使用 VS Code，并保持 UTF-8 编码。每条记录包含：
-
-- `id`：唯一编号，例如 `L01-001`
-- `lesson`：课次
-- `order`：本课顺序
-- `type`：`word`、`expression` 或 `example`
-- `japanese`：日语显示内容
-- `kana`：假名
-- `kanji`：汉字
-- `chinese`：中文
-- `remark`：备注
-
-修改时不要破坏 JSON 的双引号、逗号和方括号。添加后续课程时，继续增加 Lesson 51、Lesson 52 等记录，再重新生成即可。
-
-修改 JSON 后不需要重新编译 Python 程序或桌面应用，但需要重新生成普通 Excel 和 Word。
-
-修改 JSON 后再次点击“生成 Excel 词库 + 默写模板（含宏版）”，三个 Excel 文件都会同步使用新数据。Windows 和 macOS 均可生成宏版，生成过程不要求本机安装 Microsoft Excel。
-
-## 构建桌面应用
-
-不编译也可以使用源码。只有希望普通用户无需安装 Python、直接双击运行时，才需要构建桌面应用。
-
-Windows：
-
-```powershell
-./build_windows_app.ps1
-```
-
-macOS：
-
-```bash
-chmod +x build_macos_app.sh
-./build_macos_app.sh
-```
-
-构建完成后：
-
-- Windows：`dist/windows/大家的日语词库-Windows/`
-- macOS：`dist/macos/大家的日语词库-macOS/`
-
-两个目录都会自动包含 `data/vocabulary.json`、宏模板和空的 `output/`，不再复制 README。应用不会把词库永久封装进程序，修改 JSON 不需要重新编译；也可以直接在界面中选择其他 JSON。
-
-GitHub Actions 已拆分为两个独立工作流：
-
-- `Build Windows app`
-- `Build macOS app`
-
-可以在 Actions 页面单独手动运行需要的平台；推送 `v*` 标签时两个工作流都会执行。Windows 和 macOS Artifact 各自只包含对应平台的完整发布包，不会混在同一目录中。
-
-## 项目结构
-
-```text
-minna-no-nihongo-vocabulary/
-├── .github/workflows/
-│   ├── build-windows.yml
-│   └── build-macos.yml
-├── data/
-│   └── vocabulary.json
-├── output/
-├── template/
-│   └── 默写宏模板.xlsm
-├── scripts/
-│   ├── excel_builder.py
-│   ├── export_word.py
-│   └── random_exam.py
-├── desktop_app.py
-├── main.py
-├── requirements.txt
-├── build_windows_app.ps1
-└── build_macos_app.sh
-```
-
-## Git 更新
-
-验证修改后执行：
-
-```bash
-git add .
-git commit -m "更新词库工程"
-git push
-```
-
-普通生成文件、编译文件和临时文件默认不提交。宏版 `.xlsm` 保留在仓库中，方便下载后直接使用。公开发布前请自行确认词库数据的版权许可。
+项目不包含 PDF 导出。生成结果与构建目录默认不提交，发布包通过 GitHub Releases 分发。

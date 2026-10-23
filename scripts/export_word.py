@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import defaultdict
 from pathlib import Path
 
@@ -10,33 +9,47 @@ from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt
+from docx.oxml import OxmlElement
+
+from scripts.random_exam import filter_records, load_vocabulary
+from scripts.excel_builder import atomic_output
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def export_word(data_path: Path, output_path: Path) -> Path:
+def export_word(data_path: Path, output_path: Path, *, lessons=None) -> Path:
     """生成每课分节、例句置后的可编辑 Word 文档。"""
-    records = json.loads(data_path.read_text(encoding="utf-8"))
+    records = filter_records(load_vocabulary(data_path), lessons)
+    if not records:
+        raise ValueError("所选课程没有词条。")
     grouped: dict[int, list[dict]] = defaultdict(list)
-    for record in records:
+    for record in sorted(records, key=lambda r: (r["lesson"], r["order"])):
         grouped[record["lesson"]].append(record)
     document = Document()
     normal = document.styles["Normal"]
     normal.font.name = "Yu Gothic"
     normal.font.size = Pt(10.5)
-    for lesson, items in sorted(grouped.items()):
-        if lesson > 1:
+    section = document.sections[0]
+    section.page_width, section.page_height = Cm(21), Cm(29.7)
+    section.left_margin = section.right_margin = Cm(1.8)
+    for index, (lesson, items) in enumerate(sorted(grouped.items())):
+        if index:
             document.add_page_break()
         heading = document.add_heading(f"Lesson {lesson:02d}", level=1)
         heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
         regular = [item for item in items if item["type"] != "example"]
         examples = [item for item in items if item["type"] == "example"]
-        table = document.add_table(rows=0, cols=2)
+        table = document.add_table(rows=1, cols=2)
         table.style = "Table Grid"
+        table.autofit = False
+        table.columns[0].width, table.columns[1].width = Cm(9), Cm(8.4)
+        table.rows[0].cells[0].text, table.rows[0].cells[1].text = "日语", "中文"
+        repeat = OxmlElement("w:tblHeader")
+        table.rows[0]._tr.get_or_add_trPr().append(repeat)
         for item in regular:
             cells = table.add_row().cells
-            cells[0].width, cells[1].width = Cm(12), Cm(6.6)
+            cells[0].width, cells[1].width = Cm(9), Cm(8.4)
             cells[0].text, cells[1].text = item["japanese"], item["chinese"]
             for cell in cells:
                 cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
@@ -48,7 +61,8 @@ def export_word(data_path: Path, output_path: Path) -> Path:
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 paragraph.add_run(item["japanese"] + "\n" + item["chinese"])
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    document.save(output_path)
+    with atomic_output(output_path) as temporary:
+        document.save(temporary)
     return output_path
 
 

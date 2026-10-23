@@ -22,7 +22,7 @@
     "japanese": "～さん",
     "kana": "～さん",
     "kanji": "",
-    "chinese": "先生、女士、同志（称呼人时，为了表示礼貌接在名字后面的接尾词）",
+    "chinese": "先生、女士（接在人名后，表示礼貌的称呼）",
     "remark": "",
     "sequence": 2,
     "part_of_speech": "接尾",
@@ -67,7 +67,7 @@
     "japanese": "あなた\n貴方",
     "kana": "あなた",
     "kanji": "貴方",
-    "chinese": "你、您（用于非常亲密的关系）",
+    "chinese": "你（第二人称；称呼对方时通常用姓名或职衔，不能直接等同于敬称“您”）",
     "remark": "",
     "sequence": 5,
     "part_of_speech": "名词",
@@ -371,7 +371,7 @@
     "remark": "",
     "sequence": 25,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -911,7 +911,7 @@
     "remark": "",
     "sequence": 61,
     "part_of_speech": "感",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -1256,7 +1256,7 @@
     "remark": "",
     "sequence": 84,
     "part_of_speech": "名词",
-    "pitch_accent": "3",
+    "pitch_accent": "2",
     "dictionary_form": ""
   },
   {
@@ -1616,7 +1616,7 @@
     "remark": "",
     "sequence": 108,
     "part_of_speech": "名词",
-    "pitch_accent": "0",
+    "pitch_accent": "24",
     "dictionary_form": ""
   },
   {
@@ -1849,8 +1849,8 @@
     "lesson": 3,
     "order": 32,
     "type": "word",
-    "japanese": "なんかい\n何階",
-    "kana": "なんかい",
+    "japanese": "なんがい／なんかい\n何階",
+    "kana": "なんがい／なんかい",
     "kanji": "何階",
     "chinese": "几层",
     "remark": "",
@@ -2126,7 +2126,7 @@
     "remark": "",
     "sequence": 142,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -2426,7 +2426,7 @@
     "remark": "",
     "sequence": 162,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2441,7 +2441,7 @@
     "remark": "",
     "sequence": 163,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2456,7 +2456,7 @@
     "remark": "",
     "sequence": 164,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2471,7 +2471,7 @@
     "remark": "",
     "sequence": 165,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2486,7 +2486,7 @@
     "remark": "",
     "sequence": 166,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2501,7 +2501,7 @@
     "remark": "",
     "sequence": 167,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2741,7 +2741,7 @@
     "remark": "",
     "sequence": 183,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -2756,7 +2756,7 @@
     "remark": "",
     "sequence": 184,
     "part_of_speech": "名词",
-    "pitch_accent": "3",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2786,7 +2786,7 @@
     "remark": "",
     "sequence": 186,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2801,7 +2801,7 @@
     "remark": "",
     "sequence": 187,
     "part_of_speech": "名词",
-    "pitch_accent": "3",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -2816,7 +2816,7 @@
     "remark": "",
     "sequence": 188,
     "part_of_speech": "名词",
-    "pitch_accent": "3",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -3941,7 +3941,7 @@
     "remark": "",
     "sequence": 263,
     "part_of_speech": "名词",
-    "pitch_accent": "0",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -4226,7 +4226,7 @@
     "remark": "",
     "sequence": 282,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -5062,7 +5062,7 @@
     "japanese": "あげます",
     "kana": "あげます",
     "kanji": "",
-    "chinese": "给（你）",
+    "chinese": "给（给予别人某物；接受方通常不是说话人一方）",
     "remark": "",
     "sequence": 338,
     "part_of_speech": "动2",
@@ -6022,7 +6022,7 @@
     "japanese": "そして",
     "kana": "そして",
     "kanji": "",
-    "chinese": "于是",
+    "chinese": "而且、并且；然后（连接并列或顺承的内容）",
     "remark": "",
     "sequence": 402,
     "part_of_speech": "接",
@@ -7072,7 +7072,7 @@
     "japanese": "またこんどおねがいします\nまた今度お願いします",
     "kana": "またこんどおねがいします",
     "kanji": "また今度お願いします",
-    "chinese": "那下次再请多多关照吧",
+    "chinese": "下次再约吧／下次再请我吧（这次婉拒邀请时使用）",
     "remark": "",
     "sequence": 472,
     "part_of_speech": "",
@@ -7282,7 +7282,7 @@
     "japanese": "だいたい\n大体",
     "kana": "だいたい",
     "kanji": "大体",
-    "chinese": "大致、大体",
+    "chinese": "这次、下次",
     "remark": "",
     "sequence": 486,
     "part_of_speech": "副词",
@@ -7586,7 +7586,7 @@
     "remark": "",
     "sequence": 506,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -7702,7 +7702,7 @@
     "japanese": "ナンプラー",
     "kana": "ナンプラー",
     "kanji": "",
-    "chinese": "鱼酱",
+    "chinese": "鱼露（泰式鱼露）",
     "remark": "",
     "sequence": 514,
     "part_of_speech": "名词",
@@ -7976,7 +7976,7 @@
     "remark": "",
     "sequence": 532,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -7991,7 +7991,7 @@
     "remark": "",
     "sequence": 533,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -8201,7 +8201,7 @@
     "remark": "",
     "sequence": 547,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -8321,7 +8321,7 @@
     "remark": "",
     "sequence": 555,
     "part_of_speech": "名词",
-    "pitch_accent": "4",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -8381,7 +8381,7 @@
     "remark": "",
     "sequence": 559,
     "part_of_speech": "名词",
-    "pitch_accent": "8",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -8587,7 +8587,7 @@
     "japanese": "がいじん\n外人",
     "kana": "がいじん",
     "kanji": "外人",
-    "chinese": "外国人",
+    "chinese": "外国人（“外国人／がいこくじん”的简称；有时带疏远语感，正式场合宜用“外国人”）",
     "remark": "",
     "sequence": 573,
     "part_of_speech": "名词",
@@ -8621,7 +8621,7 @@
     "remark": "",
     "sequence": 575,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -8636,7 +8636,7 @@
     "remark": "",
     "sequence": 576,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -9022,7 +9022,7 @@
     "japanese": "こうくうびん\n航空便",
     "kana": "こうくうびん",
     "kanji": "航空便",
-    "chinese": "航运",
+    "chinese": "航空邮件、航空邮寄",
     "remark": "",
     "sequence": 602,
     "part_of_speech": "名词",
@@ -9221,7 +9221,7 @@
     "remark": "",
     "sequence": 615,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "4",
     "dictionary_form": ""
   },
   {
@@ -9251,7 +9251,7 @@
     "remark": "",
     "sequence": 617,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "4",
     "dictionary_form": ""
   },
   {
@@ -9457,7 +9457,7 @@
     "japanese": "おそい\n遅い",
     "kana": "おそい",
     "kanji": "遅い",
-    "chinese": "慢",
+    "chinese": "慢、晚、迟",
     "remark": "",
     "sequence": 631,
     "part_of_speech": "い形",
@@ -9787,7 +9787,7 @@
     "japanese": "ホテル",
     "kana": "ホテル",
     "kanji": "",
-    "chinese": "饭店",
+    "chinese": "酒店、旅馆（提供住宿的饭店）",
     "remark": "",
     "sequence": 653,
     "part_of_speech": "名词",
@@ -10117,7 +10117,7 @@
     "japanese": "コーヒーがいい",
     "kana": "コーヒーがいい",
     "kanji": "",
-    "chinese": "咖啡好（从两种物品中选择时）",
+    "chinese": "我选咖啡／我想要咖啡（选择饮品时）",
     "remark": "",
     "sequence": 675,
     "part_of_speech": "",
@@ -10207,7 +10207,7 @@
     "japanese": "たいへん\n大変",
     "kana": "たいへん",
     "kanji": "大変",
-    "chinese": "很（累人）、相当（辛苦）（表示相当糟糕、不好的状态）",
+    "chinese": "辛苦、不得了、严重（な形容词）；非常、很（副词）",
     "remark": "",
     "sequence": 681,
     "part_of_speech": "な形",
@@ -10312,7 +10312,7 @@
     "japanese": "ちゅうもん\n注文",
     "kana": "ちゅうもん",
     "kanji": "注文",
-    "chinese": "订货",
+    "chinese": "点餐、订购、订货（～します）",
     "remark": "",
     "sequence": 688,
     "part_of_speech": "名词",
@@ -11111,7 +11111,7 @@
     "remark": "",
     "sequence": 741,
     "part_of_speech": "动2",
-    "pitch_accent": "3",
+    "pitch_accent": "32",
     "dictionary_form": "答える"
   },
   {
@@ -11231,7 +11231,7 @@
     "remark": "",
     "sequence": 749,
     "part_of_speech": "动2",
-    "pitch_accent": "2",
+    "pitch_accent": "1",
     "dictionary_form": "見る"
   },
   {
@@ -11782,7 +11782,7 @@
     "japanese": "にっぽんばし\n日本橋",
     "kana": "にっぽんばし",
     "kanji": "日本橋",
-    "chinese": "日本桥",
+    "chinese": "日本桥（大阪地名，读作にっぽんばし；东京同名地名读作にほんばし）",
     "remark": "",
     "sequence": 786,
     "part_of_speech": "名词",
@@ -12997,7 +12997,7 @@
     "japanese": "〜までに",
     "kana": "〜までに",
     "kanji": "",
-    "chinese": "到～为止（指时间期限）",
+    "chinese": "在～之前、最迟到～（表示完成动作的期限）",
     "remark": "",
     "sequence": 867,
     "part_of_speech": "助",
@@ -13886,7 +13886,7 @@
     "remark": "",
     "sequence": 926,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -14227,7 +14227,7 @@
     "japanese": "むり\n無理",
     "kana": "むり",
     "kanji": "無理",
-    "chinese": "勉强",
+    "chinese": "勉强、不合理、办不到",
     "remark": "",
     "sequence": 949,
     "part_of_speech": "な形",
@@ -14422,7 +14422,7 @@
     "japanese": "もうすぐ\nもう直ぐ",
     "kana": "もうすぐ",
     "kanji": "もう直ぐ",
-    "chinese": "马上、就",
+    "chinese": "马上、很快、就要",
     "remark": "",
     "sequence": 962,
     "part_of_speech": "副词",
@@ -14471,7 +14471,7 @@
     "remark": "",
     "sequence": 965,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -14479,14 +14479,14 @@
     "lesson": 19,
     "order": 32,
     "type": "word",
-    "japanese": "どう\n道",
-    "kana": "どう",
+    "japanese": "みち\n道",
+    "kana": "みち",
     "kanji": "道",
-    "chinese": "道",
+    "chinese": "道路、路",
     "remark": "",
     "sequence": 966,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -14501,7 +14501,7 @@
     "remark": "",
     "sequence": 967,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -14516,7 +14516,7 @@
     "remark": "",
     "sequence": 968,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -15097,7 +15097,7 @@
     "japanese": "〜でものみませんか\n〜でも飲みませんか",
     "kana": "〜でものみませんか",
     "kanji": "〜でも飲みませんか",
-    "chinese": "喝点儿～什么呢？",
+    "chinese": "要不要喝点～什么的？（邀请对方喝东西）",
     "remark": "",
     "sequence": 1007,
     "part_of_speech": "",
@@ -15199,8 +15199,8 @@
     "lesson": 21,
     "order": 22,
     "type": "expression",
-    "japanese": "もうかえらないと\nもう帰らないと…",
-    "kana": "もうかえらないと",
+    "japanese": "もうかえらないと…\nもう帰らないと…",
+    "kana": "もうかえらないと…",
     "kanji": "もう帰らないと…",
     "chinese": "该回去了",
     "remark": "",
@@ -15262,7 +15262,7 @@
     "japanese": "やめます\n辞めます",
     "kana": "やめます",
     "kanji": "辞めます",
-    "chinese": "辞职、退休、戒（烟、酒）",
+    "chinese": "辞职、离职（戒烟酒通常写“やめる／止める”）",
     "remark": "",
     "sequence": 1018,
     "part_of_speech": "动2",
@@ -15382,7 +15382,7 @@
     "japanese": "ゆめ\n夢",
     "kana": "ゆめ",
     "kanji": "夢",
-    "chinese": "梦、梦想",
+    "chinese": "加加林",
     "remark": "",
     "sequence": 1026,
     "part_of_speech": "名词",
@@ -15446,7 +15446,7 @@
     "remark": "",
     "sequence": 1030,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "2",
     "dictionary_form": ""
   },
   {
@@ -15476,7 +15476,7 @@
     "remark": "",
     "sequence": 1032,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -15506,7 +15506,7 @@
     "remark": "",
     "sequence": 1034,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "2",
     "dictionary_form": ""
   },
   {
@@ -15832,7 +15832,7 @@
     "japanese": "ダイニングキッチン",
     "kana": "ダイニングキッチン",
     "kanji": "",
-    "chinese": "当餐厅的厨房",
+    "chinese": "餐厨一体的房间（DK，兼作餐厅的厨房）",
     "remark": "",
     "sequence": 1056,
     "part_of_speech": "名词",
@@ -16657,7 +16657,7 @@
     "japanese": "ドアにさわります\nドアに触ります",
     "kana": "ドアにさわります",
     "kanji": "ドアに触ります",
-    "chinese": "碰到门",
+    "chinese": "摸门、触摸门",
     "remark": "",
     "sequence": 1111,
     "part_of_speech": "",
@@ -16841,7 +16841,7 @@
     "remark": "",
     "sequence": 1123,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -17632,7 +17632,7 @@
     "japanese": "みます\n見ます",
     "kana": "みます",
     "kanji": "見ます",
-    "chinese": "看、诊断",
+    "chinese": "看、查看（一般表记；诊察通常写“診ます”）",
     "remark": "",
     "sequence": 1176,
     "part_of_speech": "动2",
@@ -17647,7 +17647,7 @@
     "japanese": "みます\n診ます",
     "kana": "みます",
     "kanji": "診ます",
-    "chinese": "看、诊断",
+    "chinese": "看病、诊察（医生为患者检查）",
     "remark": "",
     "sequence": 1177,
     "part_of_speech": "动2",
@@ -17771,7 +17771,7 @@
     "remark": "",
     "sequence": 1185,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -18716,7 +18716,7 @@
     "remark": "",
     "sequence": 1248,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -19091,7 +19091,7 @@
     "remark": "",
     "sequence": 1273,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -19432,7 +19432,7 @@
     "japanese": "けいけん\n経験",
     "kana": "けいけん",
     "kanji": "経験",
-    "chinese": "经验（〜があります：有经验；〜をします：经验）",
+    "chinese": "经验、经历（～があります：有经验；～をします：经历、体验）",
     "remark": "",
     "sequence": 1296,
     "part_of_speech": "名词",
@@ -19541,7 +19541,7 @@
     "remark": "",
     "sequence": 1303,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -19571,7 +19571,7 @@
     "remark": "",
     "sequence": 1305,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -20287,7 +20287,7 @@
     "japanese": "まちがえます\n間違えます",
     "kana": "まちがえます",
     "kanji": "間違えます",
-    "chinese": "弄错",
+    "chinese": "遗忘的东西、忘带的东西；遗留物品",
     "remark": "",
     "sequence": 1353,
     "part_of_speech": "动2",
@@ -20786,7 +20786,7 @@
     "remark": "",
     "sequence": 1386,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "2",
     "dictionary_form": ""
   },
   {
@@ -20947,7 +20947,7 @@
     "japanese": "へんじ\n返事",
     "kana": "へんじ",
     "kanji": "返事",
-    "chinese": "回信",
+    "chinese": "回答、答复、回信",
     "remark": "",
     "sequence": 1397,
     "part_of_speech": "名词",
@@ -20996,7 +20996,7 @@
     "remark": "",
     "sequence": 1400,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -21232,7 +21232,7 @@
     "japanese": "しまいます\n仕舞います",
     "kana": "しまいます",
     "kanji": "仕舞います",
-    "chinese": "收拾整理",
+    "chinese": "收起、收好、放回原处",
     "remark": "",
     "sequence": 1416,
     "part_of_speech": "动1",
@@ -21532,7 +21532,7 @@
     "japanese": "ごみばこ\nごみ箱",
     "kana": "ごみばこ",
     "kanji": "ごみ箱",
-    "chinese": "垃圾箱",
+    "chinese": "垃圾箱（声调有④、②、③三种）",
     "remark": "",
     "sequence": 1436,
     "part_of_speech": "名词",
@@ -21671,7 +21671,7 @@
     "remark": "",
     "sequence": 1445,
     "part_of_speech": "名词",
-    "pitch_accent": "0",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -21802,7 +21802,7 @@
     "japanese": "こうぎ\n講義",
     "kana": "こうぎ",
     "kanji": "講義",
-    "chinese": "讲义、上课",
+    "chinese": "讲授、讲课（声调有①、③两种）",
     "remark": "",
     "sequence": 1454,
     "part_of_speech": "名词",
@@ -22027,7 +22027,7 @@
     "japanese": "めがさめます\n目が覚めます",
     "kana": "めがさめます",
     "kanji": "目が覚めます",
-    "chinese": "醒来、睁眼",
+    "chinese": "醒来、睁眼（原教材声调标注：①→②）",
     "remark": "",
     "sequence": 1469,
     "part_of_speech": "动2",
@@ -22061,7 +22061,7 @@
     "remark": "",
     "sequence": 1471,
     "part_of_speech": "动1",
-    "pitch_accent": "2",
+    "pitch_accent": "0",
     "dictionary_form": "続く"
   },
   {
@@ -22301,7 +22301,7 @@
     "remark": "",
     "sequence": 1487,
     "part_of_speech": "动1",
-    "pitch_accent": "3",
+    "pitch_accent": "0",
     "dictionary_form": "見つかる"
   },
   {
@@ -22526,7 +22526,7 @@
     "remark": "",
     "sequence": 1502,
     "part_of_speech": "造语",
-    "pitch_accent": "",
+    "pitch_accent": "2",
     "dictionary_form": ""
   },
   {
@@ -22826,7 +22826,7 @@
     "remark": "",
     "sequence": 1522,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -23246,7 +23246,7 @@
     "remark": "",
     "sequence": 1550,
     "part_of_speech": "动2",
-    "pitch_accent": "3",
+    "pitch_accent": "2",
     "dictionary_form": "晴れる"
   },
   {
@@ -23857,7 +23857,7 @@
     "japanese": "ラッキーアイテム",
     "kana": "ラッキーアイテム",
     "kanji": "",
-    "chinese": "吉祥物",
+    "chinese": "幸运物、开运物品",
     "remark": "",
     "sequence": 1591,
     "part_of_speech": "名词",
@@ -23921,7 +23921,7 @@
     "remark": "",
     "sequence": 1595,
     "part_of_speech": "な形",
-    "pitch_accent": "0",
+    "pitch_accent": "2",
     "dictionary_form": ""
   },
   {
@@ -23995,7 +23995,7 @@
     "chinese": "怎样的～、什么样的～",
     "remark": "",
     "sequence": 1600,
-    "part_of_speech": "连体",
+    "part_of_speech": "连语",
     "pitch_accent": "1",
     "dictionary_form": ""
   },
@@ -24967,7 +24967,7 @@
     "japanese": "ソース",
     "kana": "ソース",
     "kanji": "",
-    "chinese": "沙司、辣椒酱",
+    "chinese": "酱汁、调味汁（如日式伍斯特酱）",
     "remark": "",
     "sequence": 1665,
     "part_of_speech": "名词",
@@ -25256,7 +25256,7 @@
     "remark": "",
     "sequence": 1684,
     "part_of_speech": "动1",
-    "pitch_accent": "10",
+    "pitch_accent": "0",
     "dictionary_form": "見つかる"
   },
   {
@@ -25369,10 +25369,10 @@
     "lesson": 34,
     "order": 41,
     "type": "word",
-    "japanese": "おやこどんぶり\n親子丼",
-    "kana": "おやこどんぶり",
+    "japanese": "おやこどん\n親子丼",
+    "kana": "おやこどん",
     "kanji": "親子丼",
-    "chinese": "鸡肉鸡蛋盖浇饭",
+    "chinese": "亲子丼（鸡肉鸡蛋盖饭）",
     "remark": "",
     "sequence": 1692,
     "part_of_speech": "名词",
@@ -26077,7 +26077,7 @@
     "japanese": "なおります\n治ります",
     "kana": "なおります",
     "kanji": "治ります",
-    "chinese": "治好",
+    "chinese": "病好、痊愈（自动词）",
     "remark": "",
     "sequence": 1739,
     "part_of_speech": "动1",
@@ -26456,7 +26456,7 @@
     "remark": "",
     "sequence": 1764,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -26677,7 +26677,7 @@
     "japanese": "ぜったいに\n絶対に",
     "kana": "ぜったいに",
     "kanji": "絶対に",
-    "chinese": "绝对地（接否定）",
+    "chinese": "绝对、一定（可接肯定或否定）",
     "remark": "",
     "sequence": 1779,
     "part_of_speech": "副词",
@@ -26917,7 +26917,7 @@
     "japanese": "かならずしも\n必ずしも",
     "kana": "かならずしも",
     "kanji": "必ずしも",
-    "chinese": "未必",
+    "chinese": "未必、不一定（后接否定）",
     "remark": "",
     "sequence": 1795,
     "part_of_speech": "副词",
@@ -26947,7 +26947,7 @@
     "japanese": "くさります\n腐ります",
     "kana": "くさります",
     "kanji": "腐ります",
-    "chinese": "腐败",
+    "chinese": "腐烂、变质",
     "remark": "",
     "sequence": 1797,
     "part_of_speech": "动1",
@@ -26962,7 +26962,7 @@
     "japanese": "たべものがくさります\n食べ物が腐ります",
     "kana": "たべものがくさります",
     "kanji": "食べ物が腐ります",
-    "chinese": "食物腐败",
+    "chinese": "食物腐烂、食物变质",
     "remark": "",
     "sequence": 1798,
     "part_of_speech": "",
@@ -26977,7 +26977,7 @@
     "japanese": "ほとんど\n殆ど",
     "kana": "ほとんど",
     "kanji": "殆ど",
-    "chinese": "几乎（肯定句）、几乎完全（否定句）",
+    "chinese": "几乎、大部分（肯定句）；几乎不、几乎没有（后接否定）",
     "remark": "",
     "sequence": 1799,
     "part_of_speech": "副词",
@@ -27641,7 +27641,7 @@
     "remark": "",
     "sequence": 1843,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -27817,7 +27817,7 @@
     "japanese": "しょうたいします\n招待します",
     "kana": "しょうたいします",
     "kanji": "招待します",
-    "chinese": "招待",
+    "chinese": "邀请（客人参加活动等）",
     "remark": "",
     "sequence": 1855,
     "part_of_speech": "动3",
@@ -28856,7 +28856,7 @@
     "remark": "",
     "sequence": 1924,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -29002,7 +29002,7 @@
     "japanese": "げんばくドーム\n原爆ドーム",
     "kana": "げんばくドーム",
     "kanji": "原爆ドーム",
-    "chinese": "广岛原子弹爆炸纪念馆",
+    "chinese": "原爆圆顶馆（广岛和平纪念碑，原子弹爆炸遗址建筑）",
     "remark": "",
     "sequence": 1934,
     "part_of_speech": "名词",
@@ -29066,7 +29066,7 @@
     "remark": "",
     "sequence": 1938,
     "part_of_speech": "",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -29141,7 +29141,7 @@
     "remark": "",
     "sequence": 1943,
     "part_of_speech": "动3",
-    "pitch_accent": "",
+    "pitch_accent": "2",
     "dictionary_form": "世話をする"
   },
   {
@@ -29557,7 +29557,7 @@
     "japanese": "うれしい\n嬉しい",
     "kana": "うれしい",
     "kanji": "嬉しい",
-    "chinese": "高兴（瞬间）",
+    "chinese": "高兴、喜悦",
     "remark": "",
     "sequence": 1971,
     "part_of_speech": "い形",
@@ -29951,7 +29951,7 @@
     "remark": "",
     "sequence": 1997,
     "part_of_speech": "动1",
-    "pitch_accent": "3",
+    "pitch_accent": "0",
     "dictionary_form": "伺う"
   },
   {
@@ -30131,7 +30131,7 @@
     "remark": "",
     "sequence": 2009,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -30187,7 +30187,7 @@
     "japanese": "にじかい\n二次会",
     "kana": "にじかい",
     "kanji": "二次会",
-    "chinese": "在正式宴会结束后再次聚会后喝酒",
+    "chinese": "二次聚会（正式宴会后转到别处继续聚会、饮酒等）",
     "remark": "",
     "sequence": 2013,
     "part_of_speech": "名词",
@@ -30367,7 +30367,7 @@
     "japanese": "ところで",
     "kana": "ところで",
     "kanji": "",
-    "chinese": "可是（转换话题时使用）",
+    "chinese": "对了、话说回来（转换话题时使用）",
     "remark": "",
     "sequence": 2025,
     "part_of_speech": "接",
@@ -30442,7 +30442,7 @@
     "japanese": "たしかめます\n確かめます",
     "kana": "たしかめます",
     "kanji": "確かめます",
-    "chinese": "确认（〜します）",
+    "chinese": "确认、查明、核实",
     "remark": "",
     "sequence": 2030,
     "part_of_speech": "动2",
@@ -30581,7 +30581,7 @@
     "remark": "",
     "sequence": 2039,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -30596,7 +30596,7 @@
     "remark": "",
     "sequence": 2040,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -30611,7 +30611,7 @@
     "remark": "",
     "sequence": 2041,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -30697,7 +30697,7 @@
     "japanese": "〜いか\n〜以下",
     "kana": "〜いか",
     "kanji": "〜以下",
-    "chinese": "～以下、低于～",
+    "chinese": "～以下（包括该数值，小于或等于～）",
     "remark": "",
     "sequence": 2047,
     "part_of_speech": "名词",
@@ -30712,7 +30712,7 @@
     "japanese": "〜いじょう\n〜以上",
     "kana": "〜いじょう",
     "kanji": "〜以上",
-    "chinese": "～以上、超过～",
+    "chinese": "～以上（包括该数值，大于或等于～）",
     "remark": "",
     "sequence": 2048,
     "part_of_speech": "名词",
@@ -30851,7 +30851,7 @@
     "remark": "",
     "sequence": 2057,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "1",
     "dictionary_form": ""
   },
   {
@@ -30967,12 +30967,12 @@
     "japanese": "はなれた\n離れた",
     "kana": "はなれた",
     "kanji": "離れた",
-    "chinese": "离开一段距离的～",
+    "chinese": "离开一段距离的～（“離れる”的た形）",
     "remark": "",
     "sequence": 2065,
     "part_of_speech": "动2",
     "pitch_accent": "",
-    "dictionary_form": "離る"
+    "dictionary_form": "離れる"
   },
   {
     "id": "L40-058",
@@ -31297,7 +31297,7 @@
     "japanese": "まご\n孫",
     "kana": "まご",
     "kanji": "孫",
-    "chinese": "（自己的）孙子、外孙",
+    "chinese": "（自己的）孙子、孙女、外孙、外孙女",
     "remark": "",
     "sequence": 2087,
     "part_of_speech": "名词",
@@ -31406,7 +31406,7 @@
     "remark": "",
     "sequence": 2094,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -31567,7 +31567,7 @@
     "japanese": "おまごさん\nお孫さん",
     "kana": "おまごさん",
     "kanji": "お孫さん",
-    "chinese": "（别人的）孙子、外孙",
+    "chinese": "（别人的）孙子、孙女、外孙、外孙女",
     "remark": "",
     "sequence": 2105,
     "part_of_speech": "名词",
@@ -32632,7 +32632,7 @@
     "japanese": "アパート",
     "kana": "アパート",
     "kanji": "",
-    "chinese": "公共住宅、公寓",
+    "chinese": "公寓、出租住宅（日本通常指较小规模的集合住宅）",
     "remark": "",
     "sequence": 2176,
     "part_of_speech": "名词",
@@ -32677,7 +32677,7 @@
     "japanese": "せかいはつ\n世界初",
     "kana": "せかいはつ",
     "kanji": "世界初",
-    "chinese": "世界最初",
+    "chinese": "世界首次、世界首创",
     "remark": "",
     "sequence": 2179,
     "part_of_speech": "名词",
@@ -33517,7 +33517,7 @@
     "japanese": "どうもおつかれさまでした\nどうもお疲れ様でした",
     "kana": "どうもおつかれさまでした",
     "kanji": "どうもお疲れ様でした",
-    "chinese": "在美容院，店员/美容师最后对顾客说",
+    "chinese": "辛苦了（本课为美容师在服务结束时对顾客说的话）",
     "remark": "",
     "sequence": 2235,
     "part_of_speech": "",
@@ -33701,7 +33701,7 @@
     "remark": "",
     "sequence": 2247,
     "part_of_speech": "名词",
-    "pitch_accent": "",
+    "pitch_accent": "3",
     "dictionary_form": ""
   },
   {
@@ -33877,7 +33877,7 @@
     "japanese": "いやがります\n嫌がります",
     "kana": "いやがります",
     "kanji": "嫌がります",
-    "chinese": "讨厌、不受欢迎",
+    "chinese": "嫌弃、讨厌、表现出不愿意",
     "remark": "",
     "sequence": 2259,
     "part_of_speech": "动1",
@@ -34571,7 +34571,7 @@
     "remark": "",
     "sequence": 2305,
     "part_of_speech": "名词",
-    "pitch_accent": "101",
+    "pitch_accent": "7",
     "dictionary_form": ""
   },
   {
@@ -34826,7 +34826,7 @@
     "remark": "",
     "sequence": 2322,
     "part_of_speech": "名词",
-    "pitch_accent": "4",
+    "pitch_accent": "0",
     "dictionary_form": ""
   },
   {
@@ -34957,12 +34957,12 @@
     "japanese": "ついています",
     "kana": "ついています",
     "kanji": "",
-    "chinese": "运气好",
+    "chinese": "运气好、走运（“つく”的ている形）",
     "remark": "",
     "sequence": 2331,
-    "part_of_speech": "动2",
+    "part_of_speech": "动1",
     "pitch_accent": "",
-    "dictionary_form": "ついている"
+    "dictionary_form": "つく"
   },
   {
     "id": "L46-033",
@@ -35554,10 +35554,10 @@
     "lesson": 47,
     "order": 34,
     "type": "expression",
-    "japanese": "ひとがわかれます\n人が別れます",
-    "kana": "ひとがわかれます",
-    "kanji": "人が別れます",
-    "chinese": "与人分手",
+    "japanese": "ひととわかれます\n人と別れます",
+    "kana": "ひととわかれます",
+    "kanji": "人と別れます",
+    "chinese": "与人分手、与人分别",
     "remark": "",
     "sequence": 2371,
     "part_of_speech": "",
@@ -35602,7 +35602,7 @@
     "japanese": "ごみがもえます\nごみが燃えます",
     "kana": "ごみがもえます",
     "kanji": "ごみが燃えます",
-    "chinese": "燃烧垃圾",
+    "chinese": "垃圾燃烧、垃圾烧起来",
     "remark": "",
     "sequence": 2374,
     "part_of_speech": "",
@@ -36727,7 +36727,7 @@
     "japanese": "わたくし\n私",
     "kana": "わたくし",
     "kanji": "私",
-    "chinese": "我（「わたし」的自谦语）",
+    "chinese": "我（“わたし”的郑重说法）",
     "remark": "",
     "sequence": 2449,
     "part_of_speech": "名词",
@@ -36937,7 +36937,7 @@
     "japanese": "いただきます",
     "kana": "いただきます",
     "kanji": "",
-    "chinese": "吃、喝（「食べます」「のみます」「もらいます」的自谦语）",
+    "chinese": "得到、收到；吃、喝（“もらう”“食べる”“飲む”的自谦语）",
     "remark": "",
     "sequence": 2463,
     "part_of_speech": "动1",
@@ -36982,7 +36982,7 @@
     "japanese": "ぞんじます\n存じます",
     "kana": "ぞんじます",
     "kanji": "存じます",
-    "chinese": "知道（「知ります」的自谦语）",
+    "chinese": "知道、认为（自谦表达；“知道”常用“存じております”）",
     "remark": "",
     "sequence": 2466,
     "part_of_speech": "动2",

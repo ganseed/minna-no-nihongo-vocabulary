@@ -14,6 +14,11 @@ function Invoke-Python {
 }
 
 New-Item -ItemType Directory -Force $PackageRoot | Out-Null
+$ResolvedDistRoot = [System.IO.Path]::GetFullPath($DistRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar)
+$ResolvedPackageRoot = [System.IO.Path]::GetFullPath($PackageRoot)
+if (-not $ResolvedPackageRoot.StartsWith($ResolvedDistRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+  throw "发布目录必须位于 dist/windows 内，已停止清理。"
+}
 $Executable = Join-Path $PackageRoot "大家的日语词库工具.exe"
 Remove-Item -LiteralPath $Executable -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath (Join-Path $PackageRoot "data") -Recurse -Force -ErrorAction SilentlyContinue

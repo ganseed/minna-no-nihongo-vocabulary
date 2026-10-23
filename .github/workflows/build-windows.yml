@@ -2,9 +2,7 @@ name: Build Windows app
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
 
 permissions:
   contents: read
@@ -29,6 +27,14 @@ jobs:
         shell: pwsh
         run: ./build_windows_app.ps1
 
+      - name: Test bundled application generation
+        shell: pwsh
+        run: |
+          $package = "dist/windows/大家的日语词库-Windows"
+          $exe = Join-Path $package "大家的日语词库工具.exe"
+          Start-Process -FilePath $exe -ArgumentList "--generate-excel-and-exit" -Wait -WindowStyle Hidden
+          python -c "from pathlib import Path; from openpyxl import load_workbook; p=Path('$package')/'output'/'大家的日语Ⅰ默写.xlsx'; assert p.is_file(), 'Bundled generation failed'; assert load_workbook(p)['默写'].max_row == 21, 'Unexpected blank question rows'"
+
       - name: Verify release contents
         shell: pwsh
         run: |
@@ -36,7 +42,7 @@ jobs:
           if (-not (Test-Path "$package/大家的日语词库工具.exe")) { throw "Windows executable is missing" }
           if (-not (Test-Path "$package/data/vocabulary.json")) { throw "Bundled vocabulary.json is missing" }
           if (-not (Test-Path "$package/template/默写宏模板.xlsm")) { throw "Macro template is missing" }
-          if (-not (Test-Path "$package/output")) { throw "Output directory is missing" }
+          if (-not (Test-Path "$package/output/大家的日语Ⅰ默写-宏版.xlsm")) { throw "Macro workbook is missing" }
 
       - name: Create Windows zip
         shell: pwsh

@@ -2,9 +2,7 @@ name: Build macOS app
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
 
 permissions:
   contents: read
@@ -30,13 +28,19 @@ jobs:
           chmod +x build_macos_app.sh
           ./build_macos_app.sh
 
+      - name: Test bundled application generation
+        run: |
+          package="dist/macos/大家的日语词库-macOS"
+          "$package/大家的日语词库工具.app/Contents/MacOS/大家的日语词库工具" --generate-excel-and-exit
+          python3 -c "from pathlib import Path; from openpyxl import load_workbook; p=Path('$package')/'output'/'大家的日语Ⅰ默写.xlsx'; assert p.is_file(), 'Bundled generation failed'; assert load_workbook(p)['默写'].max_row == 21, 'Unexpected blank question rows'"
+
       - name: Verify release contents
         run: |
           package="dist/macos/大家的日语词库-macOS"
           test -d "$package/大家的日语词库工具.app"
           test -f "$package/data/vocabulary.json"
           test -f "$package/template/默写宏模板.xlsm"
-          test -d "$package/output"
+          test -f "$package/output/大家的日语Ⅰ默写-宏版.xlsm"
 
       - name: Create macOS zip
         run: |
