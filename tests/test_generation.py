@@ -1,6 +1,8 @@
 """真实生成回归：空行、扩题、筛选、非法数据和导出一致性。"""
 from __future__ import annotations
 import copy
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -119,6 +121,14 @@ class ExportTests(unittest.TestCase):
                 raise RuntimeError("export failed")
         self.assertEqual(path.read_bytes(), b"previous file")
         self.assertEqual(list(self.root.glob(".generating-*")), [])
+
+    def test_generation_does_not_depend_on_chinese_console_support(self):
+        path = self.root / "input.json"
+        path.write_text(json.dumps(records(2)), encoding="utf-8")
+        with io.TextIOWrapper(io.BytesIO(), encoding="cp1252") as english_console:
+            with contextlib.redirect_stdout(english_console):
+                paths = build_workbooks(path, self.root)
+        self.assertTrue(all(p.is_file() for p in paths))
 
     def test_real_library_single_lesson_full_generation(self):
         paths = build_workbooks(ROOT / "data/vocabulary.json", self.root, lessons=[3], count=200, seed=2)

@@ -285,7 +285,6 @@ def build_workbooks(data_path=None, output_dir=None, *, lessons=None, count=20, 
             with atomic_output(target) as temporary:
                 temporary.write_bytes(source.read_bytes())
             result.append(target)
-    print(f"已生成 {len(selected)} 条词条的阅读词库和本次默写，输出目录：{destination}")
     return tuple(result)
 
 

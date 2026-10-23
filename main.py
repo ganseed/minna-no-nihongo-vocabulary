@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from scripts.excel_builder import build_workbooks
@@ -14,6 +15,10 @@ ROOT = Path(__file__).resolve().parent
 
 
 def main() -> None:
+    # 英文 Windows 的重定向输出可能默认使用 cp1252，中文路径同样需要 UTF-8。
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="大家的日语长期词库工程")
     parser.add_argument("command", choices=["excel", "word", "all"])
     parser.add_argument("--data", type=Path, default=ROOT / "data" / "vocabulary.json")
@@ -27,10 +32,13 @@ def main() -> None:
         records = load_vocabulary(args.data)
         lessons = parse_lessons(args.lessons, (r["lesson"] for r in records))
         if args.command in {"excel", "all"}:
-            build_workbooks(args.data, args.output, lessons=lessons,
-                            count=parse_count(args.count), direction=DIRECTIONS[args.direction], seed=args.seed)
+            paths = build_workbooks(args.data, args.output, lessons=lessons,
+                                    count=parse_count(args.count), direction=DIRECTIONS[args.direction], seed=args.seed)
+            for path in paths:
+                print(f"已生成：{path}")
         if args.command in {"word", "all"}:
-            export_word(args.data, args.output / "大家的日语Ⅰ词库.docx", lessons=lessons)
+            path = export_word(args.data, args.output / "大家的日语Ⅰ词库.docx", lessons=lessons)
+            print(f"已生成：{path}")
     except (OSError, UnicodeError, ValueError) as error:
         parser.exit(1, f"生成失败：{error}\n")
 
