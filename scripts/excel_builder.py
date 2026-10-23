@@ -40,8 +40,8 @@ def resource_file(relative: str) -> Path:
 
 
 def default_output_dir() -> Path:
-    if getattr(sys, "frozen", False) and sys.platform == "darwin":
-        return Path.home() / "Documents" / "日语词库" / "output"
+    # Keep generated files alongside the app/package, not in a machine-specific
+    # absolute Documents path. The package's output/ directory is created on demand.
     return project_root() / "output"
 
 
