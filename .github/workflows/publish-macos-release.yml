@@ -1,24 +1,29 @@
 name: Publish Windows and macOS release
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   test:
+    if: startsWith(github.event.head_commit.message, 'Publish Windows and macOS packages together')
     uses: ./.github/workflows/test.yml
 
   windows:
+    if: startsWith(github.event.head_commit.message, 'Publish Windows and macOS packages together')
     needs: test
     uses: ./.github/workflows/build-windows.yml
 
   macos:
+    if: startsWith(github.event.head_commit.message, 'Publish Windows and macOS packages together')
     needs: test
     uses: ./.github/workflows/build-macos.yml
 
   publish:
+    if: startsWith(github.event.head_commit.message, 'Publish Windows and macOS packages together')
     needs: [windows, macos]
     runs-on: ubuntu-latest
     steps:
