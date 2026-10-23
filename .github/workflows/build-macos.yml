@@ -45,12 +45,12 @@ jobs:
       - name: Create macOS zip
         run: |
           cd dist/macos
-          ditto -c -k --sequesterRsrc --keepParent "大家的日语词库-macOS" "../大家的日语词库-macOS.zip"
+          ditto -c -k --sequesterRsrc --keepParent "大家的日语词库-macOS" "../minna-no-nihongo-vocabulary-macOS.zip"
 
       - name: Upload macOS package
         uses: actions/upload-artifact@v4
         with:
           name: minna-no-nihongo-vocabulary-macos
-          path: dist/大家的日语词库-macOS.zip
+          path: dist/minna-no-nihongo-vocabulary-macOS.zip
           if-no-files-found: error
           retention-days: 14
